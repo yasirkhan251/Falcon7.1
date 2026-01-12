@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mobile & Laptop Doorstep Repair | Falcon Tech World{% endblock %}
+
+{% block content %}
+<style>
+    /* --- Theme Integration & Layout Overrides --- */
+    :root {
+        --secondary-accent: #22c55e; /* Default Green for CTAs */
+        --hero-overlay: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Adjusting secondary accent based on light/dark mode for better contrast */
+    [data-theme="light"] {
+        --secondary-accent: #16a34a; /* Slightly deeper green for light mode */
+        --hero-overlay: rgba(0, 0, 0, 0.4);
+    }
+
+    .landing-section {
+        padding: 80px 20px;
+        background-color: var(--bg-color); 
+        color: var(--text-main);
+        transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .section-heading {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .section-heading h2 {
+        font-size: 2.5rem;
+        /* Using Orange/Green gradient underline based on theme */
+        border-bottom: 3px solid var(--accent-secondary); 
+        display: inline-block;
+        padding-bottom: 5px;
+        color: var(--text-main);
+    }
+
+    /* 1. Hero Section - Uses Orange/Blue/Green Accents */
+    .initial-hero {
+        background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url("{% static 'images/Background.webp' %}");
+        background-size: cover;
+        background-position: center;
+        border-radius: 15px;
+        text-align: center;
+        padding: 100px 20px;
+        border-bottom: 5px solid var(--accent-secondary); 
+        margin-bottom: 40px;
+        height: 700px;
+    }
+
+    .hero-cta-main {
+        display: inline-block;
+        background-color: var(--secondary-accent); 
+        color: #ffffff !important; 
+        padding: 18px 40px;
+        border-radius: 10px;
+        font-size: 1.4rem;
+        font-weight: bold;
+        text-decoration: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .hero-cta-main:hover {
+        transform: scale(1.05);
+        background-color: #15803d;
+    }
+
+    /* 2. Key Features Bar - Uses Theme Accents */
+    .key-features-bar {
+        background: var(--brand-gradient);
+        color: #ffffff;
+        padding: 25px 0;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 10px;
+        margin: -20px 20px 40px 20px;
+    }
+
+    .feature-item {
+        display: inline-block;
+        margin: 0 20px;
+        font-size: 1rem;
+    }
+
+    /* 3. Category Grid - Theme Aware Cards */
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 30px;
+        margin-top: 20px;
+    }
+
+    .category-box {
+        background-color: var(--header-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-box:hover {
+        transform: translateY(-10px);
+        border-color: var(--accent-primary);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .category-box h3 { color: var(--text-main); }
+    .category-box .details { color: var(--accent-primary); font-weight: 600; }
+
+    /* 4. Service/Testimonial Cards */
+    .grid-3-col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+    }
+
+    .grid-item {
+        background-color: var(--header-bg); 
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+
+    .grid-item h3 { color: var(--accent-secondary); }
+
+    .testimonial-card {
+        border-left: 5px solid var(--accent-primary);
+        font-style: italic;
+    }
+
+    /* 5. Logo Filters for Theme visibility */
+    .coverage-logos img {
+        max-height: 45px;
+        filter: grayscale(1);
+        opacity: 0.6;
+        transition: 0.3s;
+    }
+
+    .invert{
+        max-height: 45px;
+        filter: grayscale(1);
+        opacity: 0.6;
+        transition: 10s;
+    }
+    [data-theme="dark"] .coverage-logos img { filter: brightness(0) invert(1) opacity(0.6); }
+    .coverage-logos img:hover { filter: none !important; opacity: 1; }    
+
+    
+    /* 6. Form Styling */
+    .final-form-box {
+        background-color: var(--header-bg);
+        padding: 40px;
+        max-width: 550px;
+        margin: 0 auto;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .final-form-box input, .final-form-box textarea {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-color);
+        color: var(--text-main);
+        border-radius: 8px;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 992px) { .category-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { 
+        .category-grid { grid-template-columns: 1fr; } 
+        .feature-item { display: block; margin: 10px 0; }
+    }
+</style>
+
+<div class="landing-page-content">
+    <section class="initial-hero">
+        <div class="container">
+            <h1 style="color: white; margin-bottom: 15px;">Broken Phone or Laptop? Fixed Right At Your Door.</h1>
+            <h2 style="color: white; opacity: 0.9; margin-bottom: 35px;">Fast, Trusted Onsite Repair Service in Your City.</h2>
+            <a href="#category-section" class="hero-cta-main">Book Your Doorstep Repair Now</a> 
+            <p style="margin-top: 20px; font-size: 0.9rem; color: white; opacity: 0.8;">Guaranteed original parts and a 90-Day Warranty included.</p>
+        </div>
+    </section>
+
+    <section class="landing-section" id="category-section">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Choose Your Device Category</h2>
+            </div>
+
+            <div class="category-grid">
+                {% for category in categories %}
+                    <a href="{% url 'folder_detail' category.slug %}" class="category-box">
+                        <div style="height: 180px; overflow: hidden; border-radius: 8px; margin-bottom: 15px;">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'images/category_placeholder.png' %}" alt="Placeholder" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                        <h3>{{ category.name }}</h3>
+                        <div class="details" style="margin-top: auto; padding-top: 15px;">
+                            Browse Selection →
+                        </div>
+                    </a>
+                {% empty %}
+                    <p style="grid-column: 1 / -1; opacity: 0.5;">No categories found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="key-features-bar">
+        <div class="feature-item">🕒 30-60 Minute Repair</div>
+        <div class="feature-item">✅ 90-Day Warranty</div>
+        <div class="feature-item">🔒 Data Security Guaranteed</div>
+    </section>
+
+    <section class="landing-section">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Most Booked Doorstep Fixes</h2>
+            </div>
+            <div class="grid-3-col">
+                <div class="grid-item">
+                    <h3>Screen & Display</h3>
+                    <p>High-quality replacement for all major models, done at your location.</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Battery & Performance</h3>
+                    <p>Restore power with an original, certified battery replacement.</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Charging & Power</h3>
+                    <p>Repair of damaged ports, internal power issues, and faulty cables.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section" style="border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+        <div class="container" style="text-align: center;">
+            <h3 style="margin-bottom: 30px; opacity: 0.7;">We Fix All Major Brands</h3>
+            <div class="coverage-logos" style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+                <img class="invert" src="{% static 'images/apple.png' %}" alt="Apple" >
+                <img src="{% static 'images/samsung.png' %}" alt="Samsung">
+                <img src="{% static 'images/oneplus.png' %}" alt="OnePlus">
+                <img src="{% static 'images/vivo.png' %}" alt="Vivo">
+                <img src="{% static 'images/oppo.png' %}" alt="Oppo">
+                <img src="{% static 'images/xiaomi.png' %}" alt="Xiaomi">
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section" id="quote">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Get Your Free Repair Quote</h2>
+            </div>
+            <div class="final-form-box">
+                <form>
+                    <input type="text" placeholder="Device Model (e.g., iPhone 13)" required>
+                    <input type="text" placeholder="Your Name" required>
+                    <input type="email" placeholder="Email Address" required>
+                    <textarea placeholder="Describe The Issue..." rows="4" required></textarea>
+                    <button type="submit" class="hero-cta-main" style="width: 100%; border: none; cursor: pointer;">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
