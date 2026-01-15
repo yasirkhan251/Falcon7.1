@@ -82,7 +82,7 @@ def add_folder(request):
         
         # FIX: Changed 'category_id' to match your admin_dashboard parameter
         if parent_id:
-            return redirect('admin_dashboard_folder', category_id=parent_id)
+            return redirect('Admin_products_folder', category_id=parent_id)
     return redirect('admin_dashboard')
 
 def add_product(request):
@@ -98,7 +98,7 @@ def add_product(request):
             stock=request.POST.get('stock'),
             image=request.FILES.get('image') # Added image support
         )
-        return redirect('admin_dashboard_folder', category_id=cat_id)
+        return redirect('Admin_products_folder', category_id=cat_id)
     return redirect('admin_dashboard')
 
 def edit_category(request, pk):
@@ -112,7 +112,7 @@ def edit_category(request, pk):
         
         # FIX: Unified parameter name to category_id
         if category.parent:
-            return redirect('admin_dashboard_folder', category_id=category.parent.id)
+            return redirect('Admin_products_folder', category_id=category.parent.id)
         return redirect('admin_dashboard')
 
 def edit_product(request, pk):
@@ -126,7 +126,7 @@ def edit_product(request, pk):
             product.image = request.FILES.get('image')
         product.save()
         # FIX: Unified parameter name to category_id
-        return redirect('admin_dashboard_folder', category_id=product.category.id)
+        return redirect('Admin_products_folder', category_id=product.category.id)
 
 def delete_category(request, pk):
     category = get_object_or_404(Category, pk=pk)
@@ -134,7 +134,7 @@ def delete_category(request, pk):
     category.delete()
     
     if parent_id:
-        return redirect('admin_dashboard_folder', category_id=parent_id)
+        return redirect('Admin_products_folder', category_id=parent_id)
     return redirect('admin_dashboard')
 
 def delete_product(request, pk):

@@ -29,10 +29,16 @@ SECRET_KEY = 'django-insecure-xh(4fkx!#68$ya!^hv)#1a-#@r+%@no)oze+ox8to(f5h#j^io
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', ip, 'www.falcontechworld.com', 'falcontechworld.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.falcontechworld.com', 'falcontechworld.com','106.51.43.116']
 
 
 # Application definition
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://falcontechworld.com",
+    "https://www.falcontechworld.com",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
