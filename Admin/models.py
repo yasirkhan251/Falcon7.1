@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 from django.utils.text import slugify
 
 class Category(models.Model):
@@ -113,7 +114,9 @@ class Product(models.Model):
             # Dynamic SKU generation based on brand and model
             brand_part = self.brand[:3].upper()
             model_part = slugify(self.model_name)[:10].upper()
-            self.sku = f"FTW-{brand_part}-{model_part}"
+             # 🔴 NEW LINE (ensures uniqueness)
+            unique_part = uuid.uuid4().hex[:6].upper()
+            self.sku = f"FTW-{brand_part}-{model_part}-{unique_part}"
         super().save(*args, **kwargs)
 
     def __str__(self):
