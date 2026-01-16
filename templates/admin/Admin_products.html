@@ -185,8 +185,8 @@
             <h3>New Product</h3>
             <input type="text" name="brand" value="{% if current_folder %}{{ current_folder.get_brand_category.name }}{% endif %}" readonly style="opacity: 0.7;">
             <input type="text" name="model_name" placeholder="Model" required>
-            <input type="number" name="price" placeholder="Price" step="0.01" value="1" required>
-            <input type="number" name="stock" placeholder="Stock" value="1" required>
+            <input type="number" name="price" placeholder="Price" step="0.01" value="1" required hidden>
+            <input type="number" name="stock" placeholder="Stock" value="1" required hidden>
             <div class="drop-zone"><span class="dz-text">Drop or Paste Image</span><input type="file" name="image" accept="image/*" class="dz-file-input"><div class="dz-preview"></div></div>
             <button type="submit" class="admin-btn btn-product" style="width:100%">Save</button>
             <button type="button" onclick="toggleModal('productModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
