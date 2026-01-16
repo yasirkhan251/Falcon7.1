@@ -26,13 +26,11 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        overflow-x: auto; /* Scrollable on mobile */
+        overflow-x: auto;
         white-space: nowrap;
         padding-bottom: 10px;
         -webkit-overflow-scrolling: touch;
     }
-
-    /* Hide scrollbar for clean look */
     .breadcrumb-nav::-webkit-scrollbar { display: none; }
 
     .breadcrumb-item {
@@ -50,10 +48,7 @@
         text-decoration: none;
         transition: color 0.3s ease;
     }
-
-    .breadcrumb-link:hover {
-        color: var(--accent-primary);
-    }
+    .breadcrumb-link:hover { color: var(--accent-primary); }
 
     .breadcrumb-sep {
         color: var(--text-muted);
@@ -74,7 +69,6 @@
         border-left: 4px solid var(--accent-secondary);
         padding-left: 20px;
     }
-
     .page-title {
         font-size: clamp(2.2rem, 6vw, 3.8rem);
         font-weight: 800;
@@ -82,7 +76,6 @@
         margin-bottom: 10px;
         color: var(--text-main);
     }
-
     .view-path {
         font-size: 0.9rem;
         color: var(--text-muted);
@@ -96,6 +89,7 @@
         gap: 30px;
     }
 
+    /* --- Card Styling & Animation --- */
     .premium-card {
         background: var(--header-bg);
         border: 1px solid var(--border-color);
@@ -106,10 +100,16 @@
         text-decoration: none;
         height: 100%;
         position: relative;
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
         overflow: hidden;
+        /* Animation Init State */
+        opacity: 0; 
+        transform: translateY(30px);
+        transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s ease, box-shadow 0.4s ease;
     }
-
+    .premium-card.reveal {
+        opacity: 1;
+        transform: translateY(0);
+    }
     .premium-card:hover {
         transform: translateY(-12px);
         border-color: var(--accent-primary);
@@ -124,17 +124,13 @@
         background: #000;
         position: relative;
     }
-
     .image-wrapper img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.6s ease;
     }
-
-    .premium-card:hover .image-wrapper img {
-        transform: scale(1.1);
-    }
+    .premium-card:hover .image-wrapper img { transform: scale(1.1); }
 
     .card-content {
         padding: 20px 10px 5px 10px;
@@ -143,7 +139,6 @@
         flex-direction: column;
         gap: 10px;
     }
-
     .card-content h3 {
         color: var(--text-main);
         font-size: 1.5rem;
@@ -151,10 +146,7 @@
         margin: 0;
     }
 
-    .cta-container {
-        margin-top: auto;
-        padding-top: 15px;
-    }
+    .cta-container { margin-top: auto; padding-top: 15px; }
 
     .action-btn {
         width: 100%;
@@ -173,11 +165,7 @@
         gap: 8px;
         transition: 0.3s ease;
     }
-
-    .premium-card:hover .action-btn {
-        background: var(--brand-gradient);
-        color: #fff;
-    }
+    .premium-card:hover .action-btn { background: var(--brand-gradient); color: #fff; }
 
     /* Badge Style */
     .item-type-badge {
@@ -222,10 +210,7 @@
             <div class="breadcrumb-item">
                 <a href="{% url 'service_root' %}" class="breadcrumb-link">SERVICES</a>
             </div>
-            
 
-
-            
             {% if current_folder %}
                 {% for ancestor in current_folder.get_ancestors %}
                     <div class="breadcrumb-item">
@@ -235,98 +220,128 @@
                 {% endfor %}
                 <div class="breadcrumb-item">
                     <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
-                    <span class="breadcrumb-current">{{ current_folder.name|upper }}</span>
+                    {% if mode == 'product_detail' %}
+                        <a href="{% url 'folder_detail' current_folder.slug %}" class="breadcrumb-link">{{ current_folder.name|upper }}</a>
+                    {% else %}
+                        <span class="breadcrumb-current">{{ current_folder.name|upper }}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if mode == 'product_detail' %}
+                <div class="breadcrumb-item">
+                    <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+                    <span class="breadcrumb-current">{{ product.model_name|upper }}</span>
                 </div>
             {% endif %}
         </nav>
-<style>
-    .service-container { padding: 40px 0 100px 0; background-color: var(--bg-color); min-height: 80vh; position: relative; z-index: 1; }
-    .container { width: 100%; max-width: 1800px; margin: 0 auto; padding: 0 5%; }
 
-    /* --- Breadcrumbs --- */
-    .breadcrumb-nav { margin-bottom: 30px; display: flex; align-items: center; gap: 10px; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; }
-    .breadcrumb-nav::-webkit-scrollbar { display: none; }
-    .breadcrumb-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .breadcrumb-link { color: var(--text-muted); text-decoration: none; transition: 0.3s; }
-    .breadcrumb-current { background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-    /* --- Page Header --- */
-    .page-header { margin-bottom: 50px; border-left: 4px solid var(--accent-secondary); padding-left: 20px; }
-    .page-title { font-size: clamp(2.2rem, 6vw, 3.8rem); font-weight: 800; line-height: 1.1; color: var(--text-main); }
-
-    /* --- Grid --- */
-    .dynamic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 30px; }
-
-    /* --- Premium Card with Animation States --- */
-    .premium-card {
-        background: var(--header-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 28px;
-        padding: 15px;
-        display: flex;
-        flex-direction: column;
-        text-decoration: none;
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-        /* Lazy loading start state */
-        opacity: 0;
-        transform: translateY(30px);
-        transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s ease, box-shadow 0.4s ease;
-    }
-
-    .premium-card.reveal {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    .premium-card:hover {
-        transform: translateY(-12px);
-        border-color: var(--accent-primary);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-
-    .image-wrapper { width: 100%; aspect-ratio: 16 / 10; border-radius: 20px; overflow: hidden; background: #000; }
-    .image-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.6s; }
-    .premium-card:hover .image-wrapper img { transform: scale(1.1); }
-
-    .card-content { padding: 20px 10px 5px 10px; flex-grow: 1; display: flex; flex-direction: column; gap: 10px; }
-    .card-content h3 { color: var(--text-main); font-size: 1.5rem; font-weight: 700; }
-    .action-btn { width: 100%; padding: 14px; background: var(--border-color); color: var(--text-main); border-radius: 16px; text-align: center; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-    .premium-card:hover .action-btn { background: var(--brand-gradient); color: #fff; }
-</style>
         <header class="page-header">
             <h1 class="page-title">
-                {% if current_folder %}{{ current_folder.name }}{% else %}Tech Solutions{% endif %}
+                {% if mode == 'product_detail' %}
+                    Repair Options: {{ product.model_name }}
+                {% elif current_folder %}
+                    {{ current_folder.name }}
+                {% else %}
+                    Tech Solutions
+                {% endif %}
             </h1>
             <div class="view-path">
                 <i class="fa-solid fa-location-dot" style="margin-right: 5px; color: var(--accent-secondary);"></i>
-                {% if current_folder %}{{ current_folder.get_full_path }}{% else %}Root Directory{% endif %}
+                {% if mode == 'product_detail' %}
+                    Select a service category below
+                {% elif current_folder %}
+                    {{ current_folder.get_full_path }}
+                {% else %}
+                    Root Directory
+                {% endif %}
             </div>
         </header>
 
         <div class="dynamic-grid">
-            {% for folder in service_categories %}
             
-                <a href="{% url 'booking_menu'  product.sku folder.slug   %}" class="premium-card">
-                    <span class="item-type-badge">Service</span>
-                    <div class="image-wrapper">
-                        
-                        {% if folder.image %}<img src="{{ folder.image.url }}" alt="{{ folder.name }}" loading="lazy">
-                        {% else %}<img src="{% static 'images/category_placeholder.png' %}" alt="Category">{% endif %}
-                    </div>
-                    <div class="card-content">
-                        <h3>{{ folder.name }}</h3>
-                        <div class="cta-container">
-                            <div class="action-btn">
-                                EXPLORE SERIES <i class="fa-solid fa-arrow-right"></i>
+            {% if mode == 'folder_view' %}
+                {% for folder in sub_folders %}
+                    <a href="{% url 'folder_detail' folder.slug %}" class="premium-card">
+                        <span class="item-type-badge">SERIES</span>
+                        <div class="image-wrapper">
+                            {% if folder.image %}
+                                <img src="{{ folder.image.url }}" alt="{{ folder.name }}" loading="lazy">
+                            {% else %}
+                                <img src="{% static 'images/category_placeholder.png' %}" alt="Category">
+                            {% endif %}
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ folder.name }}</h3>
+                            <div class="cta-container">
+                                <div class="action-btn">
+                                    EXPLORE SERIES <i class="fa-solid fa-arrow-right"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </a>
-            {% endfor %}
+                    </a>
+                {% endfor %}
 
-                
+                {% for prod in products %}
+                    <a href="{% url 'service_detail' prod.id %}" class="premium-card">
+                        <span class="item-type-badge" style="border-color: var(--accent-primary);">DEVICE</span>
+                        <div class="image-wrapper">
+                            {% if prod.image %}
+                                <img src="{{ prod.image.url }}" alt="{{ prod.model_name }}" loading="lazy">
+                            {% else %}
+                                <img src="{% static 'images/product_placeholder.png' %}" alt="Product">
+                            {% endif %}
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ prod.model_name }}</h3>
+                            <div class="cta-container">
+                                <div class="action-btn" style="background: var(--brand-gradient); color: #fff;">
+                                    VIEW REPAIRS <i class="fa-solid fa-bolt-lightning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+
+                {% if not sub_folders and not products %}
+                    <div class="empty-container">
+                        <i class="fa-solid fa-box-open" style="font-size: 3.5rem; color: var(--accent-primary); margin-bottom: 25px;"></i>
+                        <h2 style="color: var(--text-main); font-weight: 800;">Inventory Coming Soon</h2>
+                        <p style="color: var(--text-muted);">We are currently mapping new repair modules for this selection.</p>
+                        <a href="{% url 'service_root' %}" class="btn-auth" style="text-decoration: none; display: inline-block; margin-top: 20px;">Return to Catalog</a>
+                    </div>
+                {% endif %}
+
+            {% elif mode == 'product_detail' %}
+                {% for cat in service_categories %}
+                    <a href="{% url 'booking_menu' product.sku cat.slug %}" class="premium-card">
+                        <span class="item-type-badge">SERVICE</span>
+                        <div class="image-wrapper">
+                            {% if cat.image %}
+                                <img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">
+                            {% else %}
+                                <img src="{% static 'images/category_placeholder.png' %}" alt="Category">
+                            {% endif %}
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ cat.name }}</h3>
+                            <div class="cta-container">
+                                <div class="action-btn">
+                                    SELECT <i class="fa-solid fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% empty %}
+                    <div class="empty-container">
+                        <i class="fa-solid fa-screwdriver-wrench" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 25px;"></i>
+                        <h2>No Services Found</h2>
+                        <p>We haven't listed specific repairs for this device yet.</p>
+                    </div>
+                {% endfor %}
+
+            {% endif %}
+            
         </div>
     </div>
 </div>
@@ -334,17 +349,22 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const cards = document.querySelectorAll('.premium-card');
+    
+    // Intersection Observer for scroll reveal
     const revealOnScroll = new IntersectionObserver(function(entries, observer) {
         entries.forEach((entry, index) => {
             if (entry.isIntersecting) {
+                // Staggered delay for nice visual effect
                 setTimeout(() => {
                     entry.target.classList.add('reveal');
-                }, index % 3 * 100);
+                }, index % 3 * 100); 
                 observer.unobserve(entry.target);
             }
         });
     }, { threshold: 0.1 });
+
     cards.forEach(card => revealOnScroll.observe(card));
 });
 </script>
+
 {% endblock %}

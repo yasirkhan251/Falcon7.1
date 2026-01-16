@@ -1,6 +1,5 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-
 from django.contrib import messages
 from django.db import transaction
 from Admin.models import Category, Product
@@ -92,7 +91,7 @@ def booking_success(request, booking_id):
     return render(request, "Bookings/booking_success.html", context)
 
 
-
+@login_required
 def booking_menu(request, product, service):
     # 1. Fetch the Product and Category Path (Your existing logic)
     product_obj = get_object_or_404(

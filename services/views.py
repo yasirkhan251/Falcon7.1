@@ -6,47 +6,97 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
-def folder_view(request, slug=None):
+
+
+
+
+def universal_view(request, slug=None, product_id=None):
     """
-    Handles everything: Root level, Sub-folders, and Product listings.
+    A single view that handles:
+    1. Root Listing (No slug, No ID)
+    2. Sub-folder Listing (Has slug)
+    3. Product Service Details (Has product_id)
     """
+    
+    # --- SCENARIO A: PRODUCT SERVICE MODE (User clicked a Product) ---
+    if product_id:
+        product = get_object_or_404(Product, id=product_id)
+        services = ServiceProduct.objects.filter(Product=product) # Check capitalization of 'Product' field!
+        service_categories = ServiceCategory.objects.all()
+        
+        context = {
+            'mode': 'product_detail',  # This tells the template what to show
+            'product': product,
+            'services': services,
+            'service_categories': service_categories,
+            'current_folder': product.category, # For breadcrumbs
+        }
+        return render(request, 'service/universal_page.html', context)
+
+    # --- SCENARIO B: FOLDER / CATEGORY MODE (Browsing) ---
     if slug is None:
-        # ROOT LEVEL: Show Mobile, Laptop, etc.
+        # Root Level
         current_folder = None
         children = Category.objects.filter(parent__isnull=True, is_active=True)
         products = []
     else:
-        # INSIDE A FOLDER: Show sub-folders (like Xiaomi) or Products (like Mi 11)
+        # Inside a Folder
         current_folder = get_object_or_404(Category, slug=slug)
         children = current_folder.children.filter(is_active=True)
         products = current_folder.products.filter(is_active=True)
 
     context = {
+        'mode': 'folder_view',  # This tells the template what to show
         'current_folder': current_folder,
         'sub_folders': children,
         'products': products,
     }
-    return render(request, 'service/list_view.html', context)
-    
-    
-def service_detail(request, product_id ):
-    """
-    Shows the services (Screen repair, Battery, etc.) for one specific product.
-    """
-    product = get_object_or_404(Product, id=product_id)
-    
-    # Get all service options linked to this specific product
-    services = ServiceProduct.objects.filter(Product=product)
-    service_categories = ServiceCategory.objects.all()
+    return render(request, 'service/universal_page.html', context)
 
-    context = {
-        'product': product,
-        'services': services,
-        'service_categories': service_categories,
-        'pids': product_id,
-        'category': product.category, # This allows breadcrumbs
-    }
-    return render(request, 'service/service_for.html', context)
+
+
+
+# def folder_view(request, slug=None):
+#     """
+#     Handles everything: Root level, Sub-folders, and Product listings.
+#     """
+#     if slug is None:
+#         # ROOT LEVEL: Show Mobile, Laptop, etc.
+#         current_folder = None
+#         children = Category.objects.filter(parent__isnull=True, is_active=True)
+#         products = []
+#     else:
+#         # INSIDE A FOLDER: Show sub-folders (like Xiaomi) or Products (like Mi 11)
+#         current_folder = get_object_or_404(Category, slug=slug)
+#         children = current_folder.children.filter(is_active=True)
+#         products = current_folder.products.filter(is_active=True)
+
+#     context = {
+#         'current_folder': current_folder,
+#         'sub_folders': children,
+#         'products': products,
+#     }
+#     return render(request, 'service/list_view.html', context)
+    
+    
+# def service_detail(request, product_id ):
+#     """
+#     Shows the services (Screen repair, Battery, etc.) for one specific product.
+#     """
+#     product = get_object_or_404(Product, id=product_id)
+    
+#     # Get all service options linked to this specific product
+#     services = ServiceProduct.objects.filter(Product=product)
+#     service_categories = ServiceCategory.objects.all()
+
+#     context = {
+#         'product': product,
+#         'services': services,
+#         'service_categories': service_categories,
+#         'pids': product_id,
+#         'category': product.category, # This allows breadcrumbs
+#     }
+#     return render(request, 'service/service_for.html', context)
      
 
 
