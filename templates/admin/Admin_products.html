@@ -142,7 +142,7 @@
                 <div class="image-wrapper">{% if file.image %}<img src="{{ file.image.url }}">{% else %}📦{% endif %}</div>
                 <h3 style="font-size: 1rem;">{{ file.model_name }}</h3>
                 <p style="margin: 4px 0; color: var(--text-dim); font-size: 0.85rem;">{{ file.brand }}</p>
-                <p style="font-weight: bold; color: var(--accent);">₹{{ file.price }}</p>
+                <!-- <p style="font-weight: bold; color: var(--accent);">₹{{ file.price }}</p> -->
             </div>
             {% endfor %}
         </div>
@@ -201,8 +201,8 @@
             <h3>Edit Product</h3>
             <input type="text" name="brand" id="edit_p_brand" readonly style="opacity:0.7;">
             <input type="text" name="model_name" id="edit_p_model" required>
-            <input type="number" name="price" id="edit_p_price" step="0.01" required>
-            <input type="number" name="stock" id="edit_p_stock" required>
+            <input type="number" name="price" id="edit_p_price" step="0.01" required hidden>
+            <input type="number" name="stock" id="edit_p_stock" required hidden>
             <div class="drop-zone"><span class="dz-text">Update Image</span><input type="file" name="image" accept="image/*" class="dz-file-input"><div class="dz-preview"></div></div>
             <button type="submit" class="admin-btn btn-product" style="width:100%">Update</button>
             <button type="button" onclick="toggleModal('editProductModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
