@@ -42,7 +42,7 @@ def edit_booking(request, booking_id):
         # Example: Updating status
         booking.status = request.POST.get('status')
         booking.save()
-        return redirect('Admin_dashboard')
+        return redirect('Admin_products')
     
     return render(request, 'Admin/edit_booking.html', {'booking': booking})
 
@@ -51,7 +51,7 @@ def delete_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     if request.method == 'POST':
         booking.delete()
-    return redirect('Admin_dashboard')
+    return redirect('Admin_products')
 
 def Admin_products(request, category_id=None):
     if category_id:
@@ -83,7 +83,7 @@ def add_folder(request):
         # FIX: Changed 'category_id' to match your admin_dashboard parameter
         if parent_id:
             return redirect('Admin_products_folder', category_id=parent_id)
-    return redirect('admin_dashboard')
+    return redirect('Admin_products')
 
 def add_product(request):
     if request.method == "POST":
@@ -99,7 +99,7 @@ def add_product(request):
             image=request.FILES.get('image') # Added image support
         )
         return redirect('Admin_products_folder', category_id=cat_id)
-    return redirect('admin_dashboard')
+    return redirect('Admin_products')
 
 def edit_category(request, pk):
     category = get_object_or_404(Category, pk=pk)
@@ -113,7 +113,7 @@ def edit_category(request, pk):
         # FIX: Unified parameter name to category_id
         if category.parent:
             return redirect('Admin_products_folder', category_id=category.parent.id)
-        return redirect('admin_dashboard')
+        return redirect('Admin_products')
 
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
@@ -141,7 +141,7 @@ def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     category_id = product.category.id
     product.delete()
-    return redirect('admin_dashboard_folder', category_id=category_id)
+    return redirect('Admin_products_folder', category_id=category_id)
 
 # Added the missing drag-and-drop view
 def update_display_order(request):
