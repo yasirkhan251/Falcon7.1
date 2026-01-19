@@ -20,4 +20,6 @@ urlpatterns = [
     path('bookinglist/', views.bookinglist, name='bookinglist'),
     path('booking/edit/<int:booking_id>/', views.edit_booking, name='edit_booking'),
     path('booking/delete/<int:booking_id>/', views.delete_booking, name='delete_booking'),
+    # urls.py
+    path('move-item/', views.move_item_to_folder, name='move_item_to_folder'),
 ]

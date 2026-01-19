@@ -29,11 +29,17 @@
     /* Item Cards */
     .item-card { 
         background: var(--card-bg); border-radius: 12px; padding: 15px; 
-        text-align: center; border: 1px solid #333; transition: all 0.2s ease;
+        text-align: center; border: 1px solid #333; 
         text-decoration: none; color: white; position: relative; cursor: grab;
+        /* Critical for smooth hover effects */
+        transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
     }
     .item-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
     
+    /* Dragging Visuals */
+    .sortable-ghost { opacity: 0.4; background: #333; }
+    
+    /* Image Wrapper */
     .image-wrapper { 
         height: 120px; background: #2a2a2a; border-radius: 8px; 
         display: flex; align-items: center; justify-content: center; 
@@ -74,7 +80,7 @@
     }
     .modal-content input, .modal-content textarea { width: 100%; padding: 12px; margin: 10px 0; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; }
 
-    /* ADVANCED DROP ZONE STYLES */
+    /* Drop Zone */
     .drop-zone {
         width: 100%; height: 100px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
         text-align: center; border: 2px dashed #444; border-radius: 8px; background: #1a1a1a; color: #888; cursor: pointer; transition: 0.3s; margin: 10px 0;
@@ -114,12 +120,16 @@
         </div>
 
         <div id="drag-container" class="dynamic-grid">
+            
             {% for folder in sub_folders %}
-            <div class="item-card" data-id="{{ folder.id }}" data-type="folder">
+            <div class="item-card" 
+                 data-id="{{ folder.id }}" 
+                 data-type="folder">
+                 
                 <div class="card-actions">
                     <button class="dots-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown(event, 'drop-f-{{ folder.id }}')">⋮</button>
                     <div id="drop-f-{{ folder.id }}" class="dropdown-menu">
-                        <button onclick="openEditCategory('{{ folder.id }}', '{{ folder.name|escapejs }}', '{{ folder.description|escapejs }}')">Edit</button>
+                        <button data-url="{% url 'edit_category' folder.id %}" onclick="openEditCategory(this, '{{ folder.name|escapejs }}', '{{ folder.description|escapejs }}')">Edit</button>
                         <a href="{% url 'delete_category' folder.id %}" class="delete-opt" onclick="return confirm('Delete folder?')">Delete</a>
                     </div>
                 </div>
@@ -135,14 +145,14 @@
                 <div class="card-actions">
                     <button class="dots-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown(event, 'drop-p-{{ file.id }}')">⋮</button>
                     <div id="drop-p-{{ file.id }}" class="dropdown-menu">
-                        <button onclick="openEditProduct('{{ file.id }}', '{{ file.brand|escapejs }}', '{{ file.model_name|escapejs }}', '{{ file.price }}', '{{ file.stock }}')">Edit</button>
+                        <button onclick="manualMove('{{ file.id }}')">Move to...</button>
+                        <button data-url="{% url 'edit_product' file.id %}" onclick="openEditProduct(this, '{{ file.brand|escapejs }}', '{{ file.model_name|escapejs }}', '{{ file.price }}', '{{ file.stock }}')">Edit</button>
                         <a href="{% url 'delete_product' file.id %}" class="delete-opt" onclick="return confirm('Delete product?')">Delete</a>
                     </div>
                 </div>
                 <div class="image-wrapper">{% if file.image %}<img src="{{ file.image.url }}">{% else %}📦{% endif %}</div>
                 <h3 style="font-size: 1rem;">{{ file.model_name }}</h3>
                 <p style="margin: 4px 0; color: var(--text-dim); font-size: 0.85rem;">{{ file.brand }}</p>
-                <!-- <p style="font-weight: bold; color: var(--accent);">₹{{ file.price }}</p> -->
             </div>
             {% endfor %}
         </div>
@@ -183,7 +193,7 @@
             {% csrf_token %}
             <input type="hidden" name="category_id" value="{{ current_folder.id }}">
             <h3>New Product</h3>
-            <input type="text" name="brand" value="{% if current_folder %}{{ current_folder.get_brand_category.name }}{% endif %}" readonly style="opacity: 0.7;">
+            <input type="text" name="brand" value="{% if current_folder %}{{ current_folder.get_brand_category.name|default:'' }}{% endif %}" placeholder="Brand" {% if current_folder and current_folder.get_brand_category %}readonly style="opacity: 0.7;"{% endif %}>
             <input type="text" name="model_name" placeholder="Model" required>
             <input type="number" name="price" placeholder="Price" step="0.01" value="1" required hidden>
             <input type="number" name="stock" placeholder="Stock" value="1" required hidden>
@@ -210,32 +220,36 @@
     </div>
 </div>
 
-<div id="save-toast">Order Saved!</div>
+<div id="save-toast">Action Saved!</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-    // Context & Modals
+    // --- 1. MODAL & UI UTILITIES ---
     function toggleDropdown(event, id) {
         event.preventDefault(); event.stopPropagation();
         document.querySelectorAll('.dropdown-menu').forEach(d => { if(d.id !== id) d.classList.remove('show'); });
         document.getElementById(id).classList.toggle('show');
     }
+    window.onclick = () => document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+
     function toggleModal(id) {
         const modal = document.getElementById(id);
         modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'block' : 'none';
-        if (modal.style.display === 'none') {
+        if (modal.style.display === 'block') {
             modal.querySelectorAll('.dz-preview').forEach(p => p.innerHTML = '');
             modal.querySelectorAll('.dz-text').forEach(t => t.style.display = 'block');
         }
     }
-    function openEditCategory(id, name, desc) {
-        document.getElementById('editCategoryForm').action = `/admin/category/edit/${id}/`;
+
+    // Dynamic Edit Forms
+    function openEditCategory(btn, name, desc) {
+        document.getElementById('editCategoryForm').action = btn.dataset.url;
         document.getElementById('edit_cat_name').value = name;
         document.getElementById('edit_cat_desc').value = desc;
         toggleModal('editCategoryModal');
     }
-    function openEditProduct(id, brand, model, price, stock) {
-        document.getElementById('editProductForm').action = `/admin/product/edit/${id}/`;
+    function openEditProduct(btn, brand, model, price, stock) {
+        document.getElementById('editProductForm').action = btn.dataset.url;
         document.getElementById('edit_p_brand').value = brand;
         document.getElementById('edit_p_model').value = model;
         document.getElementById('edit_p_price').value = price;
@@ -243,7 +257,99 @@
         toggleModal('editProductModal');
     }
 
-    // Advanced Upload (Drag/Paste)
+    // --- 2. THE DRAG & DROP LOGIC (Windows Style) ---
+    let targetFolderId = null; 
+
+    new Sortable(document.getElementById('drag-container'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        delay: 50,
+        delayOnTouchOnly: true,
+
+        // KEY LOGIC: Detect Hover over Folder
+        onMove: function (evt, originalEvent) {
+            const dragged = evt.dragged;
+            const related = evt.related; // The element we are hovering over
+
+            // Clean up old highlights first
+            document.querySelectorAll('.item-card').forEach(el => {
+                el.style.borderColor = (el.dataset.type === 'product') ? '' : '#333';
+                if(el.dataset.type === 'product') el.style.borderBottom = '3px solid var(--accent)';
+                el.style.transform = 'scale(1)';
+                el.style.backgroundColor = 'var(--card-bg)';
+            });
+            targetFolderId = null;
+
+            // If dragging Product ONTO Folder
+            if (dragged.dataset.type === 'product' && related.dataset.type === 'folder') {
+                related.style.borderColor = 'var(--accent)';
+                related.style.backgroundColor = '#2a2a2a'; // Highlight
+                related.style.transform = 'scale(1.05)';
+                targetFolderId = related.dataset.id;
+                return false; // STOP Sorting (don't swap)
+            }
+            return true; // Allow Sorting
+        },
+
+        onEnd: function (evt) {
+            // Cleanup visual mess
+            document.querySelectorAll('.item-card').forEach(el => {
+                el.style.borderColor = '#333'; 
+                if(el.dataset.type === 'product') el.style.borderBottom = '3px solid var(--accent)';
+                el.style.transform = 'scale(1)';
+                el.style.backgroundColor = 'var(--card-bg)';
+            });
+
+            // CASE A: We dropped it into a folder
+            if (targetFolderId) {
+                if(confirm('Move this item into the folder?')) {
+                    evt.item.style.display = 'none'; // Hide immediately
+                    moveItem(evt.item.dataset.id, evt.item.dataset.type, targetFolderId);
+                }
+            } 
+            // CASE B: We just reordered it
+            else {
+                const items = [];
+                document.querySelectorAll('.item-card').forEach((el, i) => {
+                    if (el.style.display !== 'none') {
+                        items.push({ id: el.dataset.id, type: el.dataset.type, order: i });
+                    }
+                });
+                fetch("{% url 'update_display_order' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({ items: items })
+                });
+            }
+            targetFolderId = null;
+        }
+    });
+
+    // Helper: Move Item
+    function moveItem(itemId, type, folderId) {
+        fetch("{% url 'move_item_to_folder' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ item_id: itemId, type: type, folder_id: folderId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                window.location.reload(); 
+            } else {
+                alert("Error: " + data.message);
+                window.location.reload(); 
+            }
+        });
+    }
+
+    // Manual Move (Backup)
+    function manualMove(id) {
+        const folderId = prompt("Enter Folder ID to move to:"); // You can replace with a cleaner modal later
+        if(folderId) moveItem(id, 'product', folderId);
+    }
+
+    // --- 3. IMAGE UPLOAD HANDLING ---
     document.querySelectorAll('.drop-zone').forEach(zone => {
         const input = zone.querySelector('.dz-file-input');
         zone.addEventListener('click', () => input.click());
@@ -256,6 +362,7 @@
         input.addEventListener('change', () => { if (input.files.length) handlePreview(zone, input.files[0]); });
     });
 
+    // Global Paste Listener
     window.addEventListener('paste', (e) => {
         const activeModal = document.querySelector('.modal-overlay[style*="display: block"]');
         if (!activeModal) return;
@@ -265,8 +372,8 @@
                 const blob = item.getAsFile();
                 const dt = new DataTransfer(); dt.items.add(blob);
                 const input = activeModal.querySelector('.dz-file-input');
-                const zone = activeModal.querySelector('.drop-zone');
-                input.files = dt.files; handlePreview(zone, blob);
+                input.files = dt.files; 
+                handlePreview(activeModal.querySelector('.drop-zone'), blob);
             }
         }
     });
@@ -279,23 +386,6 @@
         };
         reader.readAsDataURL(file);
     }
-
-    // Sortable
-    new Sortable(document.getElementById('drag-container'), {
-        animation: 150, ghostClass: 'sortable-ghost',
-        onEnd: function () {
-            const items = [];
-            document.querySelectorAll('.item-card').forEach((el, i) => items.push({ id: el.dataset.id, type: el.dataset.type, order: i }));
-            fetch("{% url 'update_display_order' %}", {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify({ items: items })
-            }).then(() => {
-                const t = document.getElementById('save-toast'); t.style.display = 'block';
-                setTimeout(() => t.style.display = 'none', 2000);
-            });
-        }
-    });
-    window.onclick = () => document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
 </script>
 
 {% endblock %}
