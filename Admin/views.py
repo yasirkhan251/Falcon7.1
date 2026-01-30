@@ -5,7 +5,34 @@ from .models import Category, Product
 from Bookings.models import Booking, BookingAddress
 from Accounts.models import MyUser
 import json
+from django.views.decorators.http import require_POST
 
+@require_POST
+def move_item_to_folder(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        target_folder_id = data.get('folder_id')
+        item_type = data.get('type')
+
+        target_folder = get_object_or_404(Category, id=target_folder_id)
+
+        if item_type == 'product':
+            # Make sure 'Product' matches your model class name
+            product = get_object_or_404(Product, id=item_id)
+            product.category = target_folder
+            product.save()
+        
+        elif item_type == 'folder':
+            folder = get_object_or_404(Category, id=item_id)
+            if folder.id != target_folder.id:
+                folder.parent = target_folder
+                folder.save()
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        print(f"Error moving item: {e}") # This prints the error to your terminal
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 def Admin_dashboard(request):
     bookings = Booking.objects.all().order_by('-created_at') # Newest first
