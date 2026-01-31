@@ -8,12 +8,48 @@ from .models import ServiceCategory, ServiceProduct
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "created_at", "updated_at")
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}  # Auto fill slug in admin UI
-    readonly_fields = ("created_at", "updated_at")
-    ordering = ("name",)
+    list_display = (
+        "name",
+        "category",
+        "slug",
+        "display_order",
+        "created_at",
+        "updated_at",
+    )
 
+    list_filter = (
+        "category",
+        "created_at",
+        "updated_at",
+    )
+
+    search_fields = (
+        "name",
+        "slug",
+        "description",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    ordering = (
+        "display_order",
+        "name",
+    )
+
+    fieldsets = (
+        ("Basic Information", {
+            "fields": ("name", "slug", "description", "category")
+        }),
+        ("Media & Display", {
+            "fields": ("image", "display_order")
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
 # ============================================================
 # SERVICE PRODUCT ADMIN
 # ============================================================

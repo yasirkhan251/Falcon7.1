@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 # Create your views here.
 
 
@@ -22,7 +23,15 @@ def universal_view(request, slug=None, product_id=None):
     if product_id:
         product = get_object_or_404(Product, id=product_id)
         services = ServiceProduct.objects.filter(Product=product) # Check capitalization of 'Product' field!
-        service_categories = ServiceCategory.objects.all()
+        f1 = product.category
+        f2 = f1.get_ancestors()[0] if f1.get_ancestors() else f1
+
+
+        # root_category = ancestors.first() if ancestors.exists() else f1
+        print("Product's category:", f1)
+        print("Ancestors:", f2)
+
+        service_categories = ServiceCategory.objects.filter(Q(category=f2) | Q(category__isnull=True))
         
         context = {
             'mode': 'product_detail',  # This tells the template what to show
