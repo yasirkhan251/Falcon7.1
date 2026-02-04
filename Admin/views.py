@@ -6,6 +6,8 @@ from Bookings.models import Booking, BookingAddress
 from Accounts.models import MyUser
 import json
 from django.views.decorators.http import require_POST
+from django.db import connection, transaction
+from django.contrib.auth.decorators import user_passes_test
 
 @require_POST
 def move_item_to_folder(request):
@@ -192,3 +194,103 @@ def bookinglist(request):
     }
 
     return render(request, 'Admin/bookinglist.html', context)
+
+
+@user_passes_test(lambda u: u.is_staff)
+def manual_sql_query(request):
+    """
+    Advanced SQL Console View:
+    - Splits multiple semicolon-separated statements.
+    - Executes actions (UPDATE/INSERT/DELETE) and clears them from the console.
+    - Keeps SELECT queries in the console for continued viewing.
+    - Detects table names for interactive grid features.
+    """
+    context = {
+        'query': '', 
+        'results': [], 
+        'headers': [], 
+        'error': None, 
+        'table_name': '', 
+        'message': None
+    }
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        raw_query = request.POST.get('sql_query', '').strip()
+
+        # --- CASE 1: EXECUTE BUTTON CLICKED ---
+        if action == "execute" and raw_query:
+            try:
+                # Using atomic transaction to ensure data integrity if one of many updates fails
+                with transaction.atomic():
+                    with connection.cursor() as cursor:
+                        # Split by semicolon and remove empty lines
+                        statements = [s.strip() for s in raw_query.split(';') if s.strip()]
+                        
+                        select_statements = []
+                        action_count = 0
+                        
+                        for statement in statements:
+                            cursor.execute(statement)
+                            
+                            # If it's a SELECT, we want to show results and keep the text in the box
+                            if statement.upper().startswith("SELECT"):
+                                select_statements.append(statement)
+                                if cursor.description:
+                                    context['headers'] = [col[0] for col in cursor.description]
+                                    context['results'] = cursor.fetchall()
+                                    
+                                    # Detect table name for the "Delete" and "Edit" JS logic
+                                    # Looks for the word after 'FROM'
+                                    parts = statement.upper().split("FROM")
+                                    if len(parts) > 1:
+                                        context['table_name'] = parts[1].strip().split(" ")[0].split(";")[0]
+                            else:
+                                # It's an UPDATE, INSERT, or DELETE
+                                action_count += 1
+
+                        # --- CONSOLE CLEANING ---
+                        # We only send SELECT queries back to the template 'query' variable.
+                        # This removes the UPDATE commands so they don't run twice.
+                        context['query'] = ";\n".join(select_statements)
+                        if select_statements:
+                            context['query'] += ";"
+
+                        # Status Message
+                        msg = f"Successfully executed {action_count} actions."
+                        if select_statements:
+                            msg += " Results refreshed."
+                        context['message'] = msg
+            
+            except Exception as e:
+                context['error'] = str(e)
+                context['query'] = raw_query # Keep everything in the box so user can fix the error
+
+        # --- CASE 2: DELETE ROW BUTTON CLICKED ---
+        elif action == "delete_row":
+            target_table = request.POST.get('target_table')
+            row_id = request.POST.get('row_id')
+            # We keep the current query text so the table stays visible after delete
+            original_query = request.POST.get('sql_query', '') 
+            
+            try:
+                with connection.cursor() as cursor:
+                    # Execute the delete
+                    cursor.execute(f"DELETE FROM {target_table} WHERE id = %s", [row_id])
+                    
+                    # Refresh the table immediately by re-running the SELECT query
+                    statements = [s.strip() for s in original_query.split(';') if s.strip()]
+                    for stmt in statements:
+                        if stmt.upper().startswith("SELECT"):
+                            cursor.execute(stmt)
+                            context['headers'] = [col[0] for col in cursor.description]
+                            context['results'] = cursor.fetchall()
+                            context['query'] = stmt + ";"
+                            break
+                            
+                context['message'] = f"Row {row_id} deleted successfully from {target_table}."
+            except Exception as e:
+                context['error'] = f"Delete Error: {str(e)}"
+                context['query'] = original_query
+
+    return render(request, 'Admin/sql_quarry.html', context)

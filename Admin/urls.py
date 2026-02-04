@@ -22,4 +22,5 @@ urlpatterns = [
     path('booking/delete/<int:booking_id>/', views.delete_booking, name='delete_booking'),
     # urls.py
     path('move-item/', views.move_item_to_folder, name='move_item_to_folder'),
+    path('sql-console/', views.manual_sql_query, name='sql_console'),
 ]

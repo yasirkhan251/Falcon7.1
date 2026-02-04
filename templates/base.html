@@ -167,6 +167,9 @@
       <a href="#">About</a>
       <a href="{% url 'index' %}#quote">Contact</a>
         {% if user.is_authenticated %}
+        <a href="{% url 'Admin_products'%}">Admin Products</a>
+        <a href="{% url 'sql_console'%}">Sql</a> 
+        <a href="{% url 'Admin_dashboard'%}">Admin Dashboard</a>
         <a href="{% url 'my_bookings'%}">Bookings</a>
         <a href="{% url 'logout' %}"><button class="btn-auth">{{ user.name }}</button></a>
       {% else %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="padding: 20px; font-family: sans-serif; background-color: #f4f7f6; min-height: 100vh;">
+    <h2 style="color: #1e006a; margin-bottom: 20px;">Advanced SQL Console</h2>
+    
+    <form method="POST" id="sqlForm">
+        {% csrf_token %}
+        <div style="margin-bottom: 10px;">
+            <label style="font-weight: bold; color: #333;">SQL Query / Pending Changes:</label>
+            <textarea id="generated_sql" name="sql_query" 
+                style="width: 100%; height: 160px; background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; padding: 15px; border-radius: 8px; border: 2px solid #333; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">{{ query }}</textarea>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <button type="submit" name="action" value="execute" 
+                style="background: #1e006a; color: white; padding: 12px 30px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s;">
+                Execute All Commands
+            </button>
+            <button type="button" onclick="document.getElementById('generated_sql').value = ''" 
+                style="background: #f44336; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">
+                Clear Console
+            </button>
+        </div>
+    </form>
+
+    <hr style="border: 0; border-top: 1px solid #ccc; margin-bottom: 20px;">
+
+    {% if error %}
+        <div style="color: white; background: #d32f2f; padding: 15px; border-radius: 6px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <strong>SQL Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+    {% if message %}
+        <div style="color: white; background: #388e3c; padding: 15px; border-radius: 6px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    {% if results %}
+    <div style="margin-top: 20px;">
+        <p style="color: #555; font-size: 0.9em; margin-bottom: 10px;">
+            <span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px;">Tip:</span> 
+            Double-click cells to edit text. Use checkboxes for booleans.
+        </p>
+        
+        <div class="table-container">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th class="sticky-header" style="width: 80px; text-align: center;">Actions</th>
+                        {% for header in headers %}
+                            <th class="sticky-header">{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results %}
+                    <tr>
+                        <td style="text-align: center;">
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('Delete row with ID {{ row.0 }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_row">
+                                <input type="hidden" name="target_table" value="{{ table_name }}">
+                                <input type="hidden" name="row_id" value="{{ row.0 }}">
+                                <input type="hidden" name="sql_query" value="{{ query }}">
+                                <button type="submit" class="delete-btn" title="Delete Row">🗑</button>
+                            </form>
+                        </td>
+
+                        {% for cell in row %}
+                        <td class="editable-cell" 
+                            data-row-id="{{ row.0 }}" 
+                            style="padding: 10px; border-right: 1px solid #eee; cursor: pointer;">
+                            
+                            {% if cell is True or cell is False %}
+                                <div style="text-align: center;">
+                                    <input type="checkbox" 
+                                           {% if cell %}checked{% endif %} 
+                                           onchange="generateBooleanSQL('{{ row.0 }}', '{{ forloop.counter0 }}', this.checked)"
+                                           class="bool-checkbox">
+                                </div>
+                            {% else %}
+                                <span class="text-data" ondblclick="makeEditable(this.parentElement, '{{ forloop.counter0 }}')">{{ cell }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Table Layout */
+    .table-container {
+        overflow-x: auto; 
+        max-height: 600px; 
+        border: 1px solid #ddd; 
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    #resultsTable {
+        width: 100%; 
+        border-collapse: collapse; 
+        font-size: 14px;
+    }
+
+    /* Sticky Header Styling */
+    .sticky-header {
+        position: sticky; 
+        top: 0; 
+        background: #1e006a !important; 
+        color: white !important; 
+        padding: 14px 10px;
+        text-align: left;
+        z-index: 10;
+        border-bottom: 2px solid #14004a;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Cell Styling */
+    .editable-cell {
+        padding: 10px; 
+        border: 1px solid #eee; 
+        color: #333 !important;
+        background: white !important;
+        min-width: 120px;
+    }
+
+    tr:hover .editable-cell {
+        background: #f9f9ff !important;
+    }
+
+    /* Delete Button Styling */
+    .delete-btn {
+        background: none; 
+        border: none; 
+        color: #f44336; 
+        cursor: pointer; 
+        font-size: 18px;
+    }
+
+    /* Input Styling */
+    .cell-input {
+        width: 95%;
+        padding: 4px;
+        border: 2px solid #1e006a;
+        border-radius: 4px;
+        color: #000 !important;
+        background: #fff !important;
+    }
+
+    .bool-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #1e006a;
+    }
+
+    .changed-highlight {
+        background-color: #fff9c4 !important;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    const tableName = "{{ table_name }}";
+    const headers = [{% for h in headers %}"{{ h }}",{% endfor %}];
+
+    // TEXT EDITING LOGIC
+    function makeEditable(cell, colIndex) {
+        if (cell.querySelector('input[type="text"]')) return;
+
+        const span = cell.querySelector('.text-data');
+        const originalValue = span ? span.innerText.trim() : cell.innerText.trim();
+        const rowId = cell.getAttribute('data-row-id');
+        
+        // Use colIndex to correctly map to the headers array
+        const columnName = headers[parseInt(colIndex)];
+
+        const input = document.createElement('input');
+        input.type = "text";
+        input.value = originalValue;
+        input.className = "cell-input";
+
+        input.onblur = function() {
+            const newValue = input.value;
+            cell.innerHTML = `<span class="text-data" ondblclick="makeEditable(this.parentElement, '${colIndex}')">${newValue}</span>`;
+
+            if (newValue !== originalValue) {
+                const safeValue = newValue.replace(/'/g, "''");
+                appendSQLCommand(`UPDATE ${tableName} SET ${columnName} = '${safeValue}' WHERE id = ${rowId};`);
+                cell.classList.add('changed-highlight');
+            }
+        };
+
+        input.onkeydown = function(e) {
+            if (e.key === 'Enter') input.blur();
+        };
+
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+    }
+
+    // BOOLEAN CHECKBOX LOGIC
+    function generateBooleanSQL(id, colIndex, isChecked) {
+        const columnName = headers[parseInt(colIndex)];
+        const value = isChecked ? 1 : 0;
+        appendSQLCommand(`UPDATE ${tableName} SET ${columnName} = ${value} WHERE id = ${id};`);
+        
+        // Highlight the background to indicate a change
+        event.target.closest('.editable-cell').classList.add('changed-highlight');
+    }
+
+    // HELPER: APPEND TO SQL CONSOLE
+    function appendSQLCommand(command) {
+        const sqlArea = document.getElementById('generated_sql');
+        const prefix = sqlArea.value.trim() === "" ? "" : "\n";
+        sqlArea.value += prefix + command;
+        sqlArea.scrollTop = sqlArea.scrollHeight;
+    }
+</script>
+{% endblock %}
