@@ -317,6 +317,34 @@
                 <div class="announcement-card"><i class="fas fa-bolt"></i> Free Diagnosis on all Laptops</div>
             </div>
         </div>
+
+        <div class="hero-split-container">
+            
+            <div class="hero-left-slider">
+                <div class="hero-slider-track" id="heroTrack">
+                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/Background.webp' %}');">
+                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">Broken Device? <br><span style="color: var(--secondary-accent);">Fixed At Your Door.</span></h1>
+                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">Fast, Trusted Onsite Repair Service in Bangalore.</p>
+                    </div>
+                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/slide2.webp' %}');">
+                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">MacBook Repair <br><span style="color: #3b82f6;">Chip-Level Experts.</span></h1>
+                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">Dead Motherboard? We Bring It Back to Life.</p>
+                    </div>
+                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/slide3.webp' %}');">
+                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">iPhone Screens <br><span style="color: #f59e0b;">Done in 30 Mins.</span></h1>
+                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">100% Original Quality with True Tone Restored.</p>
+                    </div>
+                </div>
+
+                <button class="slider-arrow left-arrow" onclick="prevSlide()">&#10094;</button>
+                <button class="slider-arrow right-arrow" onclick="nextSlide(true)">&#10095;</button>
+
+                <div class="slider-dots" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
+                    <span class="dot active" onclick="goToSlide(0)"></span>
+                    <span class="dot" onclick="goToSlide(1)"></span>
+                    <span class="dot" onclick="goToSlide(2)"></span>
+                </div>
+            </div>
 <script>
     // --- Hero Slider Logic with Arrows ---
     let currentSlide = 0;
@@ -359,34 +387,6 @@
     // Start auto-sliding
     sliderInterval = setInterval(() => nextSlide(false), 5000);
 </script>
-        <div class="hero-split-container">
-            
-            <div class="hero-left-slider">
-                <div class="hero-slider-track" id="heroTrack">
-                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/Background.webp' %}');">
-                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">Broken Device? <br><span style="color: var(--secondary-accent);">Fixed At Your Door.</span></h1>
-                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">Fast, Trusted Onsite Repair Service in Bangalore.</p>
-                    </div>
-                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/slide2.webp' %}');">
-                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">MacBook Repair <br><span style="color: #3b82f6;">Chip-Level Experts.</span></h1>
-                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">Dead Motherboard? We Bring It Back to Life.</p>
-                    </div>
-                    <div class="hero-slide" style="background-image: linear-gradient(var(--hero-overlay), var(--hero-overlay)), url('{% static 'images/slide3.webp' %}');">
-                        <h1 style="color: white; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.5rem);">iPhone Screens <br><span style="color: #f59e0b;">Done in 30 Mins.</span></h1>
-                        <p style="font-size: 1.1rem; color: white; opacity: 0.9;">100% Original Quality with True Tone Restored.</p>
-                    </div>
-                </div>
-
-                <button class="slider-arrow left-arrow" onclick="prevSlide()">&#10094;</button>
-                <button class="slider-arrow right-arrow" onclick="nextSlide(true)">&#10095;</button>
-
-                <div class="slider-dots" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
-                    <span class="dot active" onclick="goToSlide(0)"></span>
-                    <span class="dot" onclick="goToSlide(1)"></span>
-                    <span class="dot" onclick="goToSlide(2)"></span>
-                </div>
-            </div>
-
         <div class="hero-right-form">
                 <h3>Select Your Model</h3>
                 <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Get a free doorstep repair quote instantly.</p>
