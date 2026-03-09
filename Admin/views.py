@@ -60,6 +60,7 @@ def Admin_dashboard(request):
         'recent_bookings': bookings[:5],  # Sending the 10 latest to the table
         'clients': clients,
         'bookings_today_count': bookings_today_count,
+        'all_bookings': bookings
     }
     
     return render(request, 'Admin/Admin_dashboard.html', context)

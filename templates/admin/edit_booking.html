@@ -9,9 +9,9 @@
             <div>
                 <label style="display:block; margin-bottom: 8px; color: var(--text-muted);">Status</label>
                 <select name="status" style="width:100%; padding: 12px; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px;">
-                    <option value="Pending" {% if booking.status == 'Pending' %}selected{% endif %}>Pending</option>
-                    <option value="Processing" {% if booking.status == 'Processing' %}selected{% endif %}>Processing</option>
-                    <option value="Completed" {% if booking.status == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="in_progress" {% if booking.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Completed</option>
                 </select>
             </div>
 

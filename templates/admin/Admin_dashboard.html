@@ -35,6 +35,17 @@
     
     .map-link { color: var(--accent-primary); text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; }
     .map-link:hover { text-decoration: underline; opacity: 0.8; }
+
+    /* Modal Glow for Clarity */
+    .modal-box { 
+        background: var(--nav-mobile-bg); 
+        border: 1px solid var(--border-color); 
+        border-radius: 20px; 
+        padding: 2.5rem; 
+        position: relative; 
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+    #detailsModal .modal-box { border: 1px solid var(--accent-primary); box-shadow: 0 0 40px rgba(59, 130, 246, 0.3); }
 </style>
 
 <div class="dashboard-container">
@@ -65,9 +76,11 @@
     <div class="content-section">
         <div class="section-header">
             <h2>Recent Activity</h2>
-            <button class="btn-auth" style="padding: 8px 16px; font-size: 0.8rem;">View All Reports</button>
+            <button class="btn-auth" style="padding: 8px 16px; font-size: 0.8rem;" onclick="openReports()">
+                View All Reports
+            </button>
         </div>
-        
+
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -91,30 +104,28 @@
                         <td>{{ booking.model }} - {{ booking.purpose }}</td>
                         <td>{{ booking.created_at|date:"M d, Y" }}</td>
                         <td>
-                            <span class="status-badge" 
-                                  style="{% if booking.status == 'completed' %}color: #22c55e; background: rgba(34, 197, 94, 0.1);{% else %}color: #f97316; background: rgba(249, 115, 22, 0.1);{% endif %}">
-                                {{ booking.status|capfirst }}
-                            </span>
+                           <span class="status-badge" 
+      style="{% if booking.status == 'completed' %}
+                color: #22c55e; background: rgba(34, 197, 94, 0.1);
+             {% elif booking.status == 'in_progress' %}
+                color: #3b82f6; background: rgba(59, 130, 246, 0.1);
+             {% else %}
+                color: #f97316; background: rgba(249, 115, 22, 0.1);
+             {% endif %}">
+    {% if booking.status == 'in_progress' %}
+        In Progress
+    {% else %}
+        {{ booking.status|capfirst }}
+    {% endif %}
+</span>
                         </td>
                         <td>
                             <div style="display: flex; gap: 8px;">
-                                <button class="action-btn" onclick="showDetails(
-                                    '{{ booking.user.name|escapejs }}', 
-                                    '{{ booking.user.username|escapejs }}', 
-                                    '{{ booking.model|escapejs }}', 
-                                    '{{ booking.purpose|escapejs }}', 
-                                    '{{ booking.status|escapejs }}', 
-                                    '{{ booking.created_at|date:'M d, Y' }}',
-                                    '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}'
-                                )">
+                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <a href="{% url 'edit_booking' booking.id %}" class="action-btn" style="color: #3b82f6;">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button class="action-btn" style="color: #ef4444;" onclick="confirmDelete('{{ booking.id }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <a href="{% url 'edit_booking' booking.id %}" class="action-btn" style="color: #3b82f6;"><i class="fas fa-edit"></i></a>
+                                <button class="action-btn" style="color: #ef4444;" onclick="confirmDelete('{{ booking.id }}')"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -127,8 +138,56 @@
     </div>
 </div>
 
-<div id="detailsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:20000; place-items:center; padding: 20px;">
-    <div style="background: var(--nav-mobile-bg); border: 1px solid var(--border-color); width: 100%; max-width: 500px; border-radius: 20px; padding: 2.5rem; position: relative;">
+<div id="reportsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:20001; place-items:center; padding: 20px; backdrop-filter: blur(5px);">
+    <div style="background: var(--nav-mobile-bg); border: 1px solid var(--border-color); width: 95%; max-width: 1200px; max-height: 90vh; border-radius: 20px; padding: 2rem; position: relative; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="brand-gradient-text">Full Booking Reports</h2>
+            <button onclick="closeReports()" style="background:none; border:none; color:var(--text-main); cursor:pointer; font-size:2rem;">×</button>
+        </div>
+        <div class="table-wrapper" style="flex: 1; overflow-y: auto;">
+            <table id="allBookingsTable">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Device/Purpose</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in all_bookings %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="client-avatar">{{ booking.user.username|slice:":2"|upper }}</div>
+                                <span>{{ booking.user.name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ booking.model }} - {{ booking.purpose }}</td>
+                        <td>{{ booking.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="status-badge" style="{% if booking.status == 'completed' %}color: #22c55e; background: rgba(34, 197, 94, 0.1);{% else %}color: #f97316; background: rgba(249, 115, 22, 0.1);{% endif %}">{{ booking.status|capfirst }}</span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{% url 'edit_booking' booking.id %}" class="action-btn" style="color: #3b82f6;"><i class="fas fa-edit"></i></a>
+                                <button class="action-btn" style="color: #ef4444;" onclick="confirmDelete('{{ booking.id }}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="detailsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:30000; place-items:center; padding: 20px; backdrop-filter: blur(2px);">
+    <div class="modal-box" style="width: 100%; max-width: 500px;">
         <button onclick="closeModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--text-main); cursor:pointer; font-size:1.5rem;">×</button>
         <h2 class="brand-gradient-text" style="margin-bottom: 1.5rem;">Booking Details</h2>
         <div id="modalContent" style="display:flex; flex-direction:column; gap: 15px;"></div>
@@ -136,19 +195,14 @@
     </div>
 </div>
 
-<form id="delete-form" method="POST" style="display:none;">
-    {% csrf_token %}
-</form>
+<form id="delete-form" method="POST" style="display:none;">{% csrf_token %}</form>
 
 <script>
+    // --- MODAL LOGIC ---
     function showDetails(name, contact, model, purpose, status, date, address) {
         const modal = document.getElementById('detailsModal');
         const content = document.getElementById('modalContent');
-        
-        // Create Google Maps link
-        const mapsUrl = address !== "No address provided" 
-            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` 
-            : "#";
+        const mapsUrl = address !== "No address provided" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "#";
 
         content.innerHTML = `
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
@@ -171,11 +225,7 @@
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">ADDRESS</small>
                 <p style="font-weight:500; font-size:0.95rem; margin-top:4px; line-height:1.4;">
-                    ${address !== "No address provided" 
-                        ? `<a href="${mapsUrl}" target="_blank" class="map-link">
-                             <i class="fas fa-map-marker-alt"></i> ${address}
-                           </a>` 
-                        : address}
+                    ${address !== "No address provided" ? `<a href="${mapsUrl}" target="_blank" class="map-link"><i class="fas fa-map-marker-alt"></i> ${address}</a>` : address}
                 </p>
             </div>
             <div>
@@ -189,9 +239,23 @@
 
     function closeModal() {
         document.getElementById('detailsModal').style.display = 'none';
+        // Only restore scroll if reportsModal is also closed
+        if (document.getElementById('reportsModal').style.display !== 'grid') {
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function openReports() {
+        document.getElementById('reportsModal').style.display = 'grid';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeReports() {
+        document.getElementById('reportsModal').style.display = 'none';
         document.body.style.overflow = 'auto';
     }
 
+    // --- DELETE LOGIC ---
     function confirmDelete(bookingId) {
         if (confirm("Permanently delete this booking?")) {
             const form = document.getElementById('delete-form');
