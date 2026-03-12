@@ -388,38 +388,33 @@
     // Start auto-sliding
     sliderInterval = setInterval(() => nextSlide(false), 5000);
 </script>
-        <div class="hero-right-form">
-                <h3>Select Your Model</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Get a free doorstep repair quote instantly.</p>
-                
-                <form method="POST" action="">
-                    {% csrf_token %}
-                    
-                    <select name="brand_slug" required style="width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); font-size: 1rem;">
-                        <option value="" disabled selected>Select Brand</option>
-                        
-                        {% for category in categories %}
-                            <option value="{{ category.slug }}">{{ category.name }}</option>
-                        {% empty %}
-                            <option value="" disabled>No brands available</option>
-                        {% endfor %}
-                        
-                    </select>
+<div class="hero-right-form">
+    <h3>Select Your Model</h3>
+    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Get a doorstep repair quote instantly.</p>
+    
+    <form method="POST" id="repair-form" action="">
+        {% csrf_token %}
+        
+        <select id="root-category" name="category_id" required style="width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); font-size: 1rem;">
+            <option value="" disabled selected>Select Category</option>
+            {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
 
-                    <input type="text" name="device_model" placeholder="Device Model (e.g., iPhone 13)" required style="width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main);">
-                    <input type="text" name="phone_number" placeholder="Your WhatsApp Number" required style="width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main);">
-                    
-                    <button type="submit" class="hero-cta-main" style="width: 100%; border: none; cursor: pointer; padding: 16px;">Check Price</button>
-                </form>
-                
-                <p style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
-                    <i class="fas fa-shield-alt" style="color: var(--secondary-accent);"></i> No Fix, No Fee Guarantee
-                </p>
-            </div>
-
+        <div id="dynamic-dropdown-container"></div>
+        
+        <button type="submit" class="hero-cta-main" style="width: 100%; border: none; cursor: pointer; padding: 16px;">Check Produc</button>
+    </form>
+    
+    <p style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
+        <i class="fas fa-shield-alt" style="color: var(--secondary-accent);"></i> No Fix, No Fee Guarantee
+    </p>
+</div>
         </div>
     </section>
 <script>
+
     // --- Hero Slider Logic ---
     let currentSlide = 0;
     const slides = document.querySelectorAll('.hero-slide');
@@ -452,6 +447,66 @@
 
     // Automatically slide every 5 seconds (5000ms)
     let sliderInterval = setInterval(nextSlide, 5000);
+</script>
+
+
+
+
+<script>
+
+  document.addEventListener('change', function(e) {
+    if (e.target.id === 'root-category' || e.target.classList.contains('dynamic-select')) {
+        
+        // --- CHANGE 1: If we just selected a final product, don't fetch more ---
+        if (e.target.name === 'product_id') return; 
+
+        const parentId = e.target.value;
+        const container = document.getElementById('dynamic-dropdown-container');
+
+        let nextSibling = e.target.nextElementSibling;
+        if (e.target.id === 'root-category') {
+            container.innerHTML = ''; 
+        } else {
+            while (nextSibling) {
+                let toRemove = nextSibling;
+                nextSibling = nextSibling.nextElementSibling;
+                toRemove.remove();
+            }
+        }
+
+        if (!parentId) return;
+
+fetch(`/get-subcategories/?parent_id=${parentId}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.length > 0) {
+            const newSelect = document.createElement('select');
+
+            // --- PASTE THE CODE HERE ---
+            const isProduct = data.some(item => item.type === 'product');
+            newSelect.name = isProduct ? "product_id" : "category_id";
+            // ---------------------------
+
+            newSelect.className = "dynamic-select";
+            newSelect.required = true;
+            
+            // Re-apply your specific styling
+            newSelect.style = "width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); font-size: 1rem;";
+            
+            // Set the label based on what we found
+            const label = isProduct ? "Select Model" : "Select Brand/Series";
+            newSelect.innerHTML = `<option value="" disabled selected>${label}</option>`;
+            
+            data.forEach(item => {
+                newSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+            });
+            
+            container.appendChild(newSelect);
+        }
+    })
+            .catch(error => console.error('Error:', error));
+    }
+});
 </script>
     <section class="how-it-works">
         <div class="container">

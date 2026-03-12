@@ -18,4 +18,5 @@ urlpatterns = [
        path('blog/', blog, name='blog'),
        path('error/', error, name='error'),
        path('faq/', faq, name='faq'),
+       path('get-subcategories/',get_subcategories, name='get_subcategories'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
