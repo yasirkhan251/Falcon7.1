@@ -7,12 +7,12 @@
 <style>
     /* --- Theme Integration & Layout Overrides --- */
     :root {
-        --secondary-accent: #22c55e;
+        --secondary-accent: #7c22c5;
         --hero-overlay: rgba(0, 0, 0, 0.7);
     }
 
     [data-theme="light"] {
-        --secondary-accent: #16a34a;
+        --secondary-accent: #5c16a3;
         --hero-overlay: rgba(0, 0, 0, 0.4);
     }
 
@@ -40,14 +40,47 @@
         text-align: center; padding: 100px 20px; border-bottom: 5px solid var(--accent-secondary); 
         margin-bottom: 40px; height: 700px;
     }
+/* The base style for your button or card */
+.hero-cta-main, .category-box {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #de580a 0%, #3b82f6 50%, #22c55e 100%);
+    background-size: 200% auto; /* Make the gradient twice as wide */
+    transition: all 0.5s ease;
+    border: none;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    z-index: 1;
+}
 
-    .hero-cta-main {
-        display: inline-block; background-color: var(--secondary-accent); color: #ffffff !important; 
-        padding: 18px 40px; border-radius: 10px; font-size: 1.4rem; font-weight: bold; 
-        text-decoration: none; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: transform 0.2s, background-color 0.2s;
-    }
-    .hero-cta-main:hover { transform: scale(1.05); background-color: #15803d; }
+/* The color shift effect on hover */
+.hero-cta-main:hover, .category-box:hover {
+    background-position: right center; /* Slides the gradient to reveal the other colors */
+    box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+    transform: translateY(-3px);
+}
 
+/* Optional: Adding that "Glow" from your image */
+.hero-cta-main::before {
+    content: '';
+    position: absolute;
+    
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(
+        120deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent
+    );
+    transition: 0.6s;
+    z-index: -1;
+}
+
+.hero-cta-main:hover::before {
+    left: 100%;
+}
     /* 2. Key Features Bar */
     .key-features-bar {
         background: var(--brand-gradient); color: #ffffff; padding: 25px 0;
@@ -404,7 +437,7 @@
 
         <div id="dynamic-dropdown-container"></div>
         
-        <button type="submit" class="hero-cta-main" style="width: 100%; border: none; cursor: pointer; padding: 16px;">Check Produc</button>
+        <button type="submit" class="hero-cta-main" style="width: 100%; border: none; cursor: pointer; padding: 16px;">Check Product</button>
     </form>
     
     <p style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
@@ -508,7 +541,35 @@ fetch(`/get-subcategories/?parent_id=${parentId}`)
     }
 });
 </script>
-    <section class="how-it-works">
+ 
+
+    <section class="landing-section" id="category-section">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Choose Your Device Category</h2>
+            </div>
+            <div class="category-grid">
+                {% for category in categories %}
+                    <a href="{% url 'folder_detail' category.slug %}" class="category-box">
+                        <div style="height: 180px; overflow: hidden; border-radius: 8px; margin-bottom: 15px;">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'images/category_placeholder.png' %}" alt="Placeholder" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                        <h3>{{ category.name }}</h3>
+                        <div class="details" style="margin-top: auto; padding-top: 15px; color:">
+                   
+                        </div>
+                    </a>
+                {% empty %}
+                    <p style="grid-column: 1 / -1; opacity: 0.5; text-align: center;">No categories found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+   <section class="how-it-works">
         <div class="container">
             <div class="section-heading">
                 <h2>How It Works</h2>
@@ -535,34 +596,6 @@ fetch(`/get-subcategories/?parent_id=${parentId}`)
             </div>
         </div>
     </section>
-
-    <section class="landing-section" id="category-section">
-        <div class="container">
-            <div class="section-heading">
-                <h2>Choose Your Device Category</h2>
-            </div>
-            <div class="category-grid">
-                {% for category in categories %}
-                    <a href="{% url 'folder_detail' category.slug %}" class="category-box">
-                        <div style="height: 180px; overflow: hidden; border-radius: 8px; margin-bottom: 15px;">
-                            {% if category.image %}
-                                <img src="{{ category.image.url }}" alt="{{ category.name }}" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
-                                <img src="{% static 'images/category_placeholder.png' %}" alt="Placeholder" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% endif %}
-                        </div>
-                        <h3>{{ category.name }}</h3>
-                        <div class="details" style="margin-top: auto; padding-top: 15px;">
-                            Browse Selection →
-                        </div>
-                    </a>
-                {% empty %}
-                    <p style="grid-column: 1 / -1; opacity: 0.5; text-align: center;">No categories found.</p>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
     <section class="key-features-bar">
         <div class="feature-item">🕒 30-60 Minute Repair</div>
         <div class="feature-item">✅ 90-Day Warranty</div>
