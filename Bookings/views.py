@@ -9,33 +9,47 @@ from datetime import datetime
 # Create your views here.
 
 
-
 @login_required
 def bookings_view(request, product, service):
     if request.method == 'POST':
         # 1. Capture Booking Data into temporary variables
-        service_type = request.POST.get('service_type_val') # Note: your inputs were 'disabled', 
-        service_name = request.POST.get('service_name_val') # so use hidden inputs or pass them via context
+        service_type = request.POST.get('service_type_val') 
+        service_name = request.POST.get('service_name_val') 
         model_device = request.POST.get('model_val')
         purpose = request.POST.get('purpose_val')
         phone = request.POST.get('phone')
         booking_date = request.POST.get('booking_date')
-        description = request.POST.get('description')
-        token = request.POST.get('csrfmiddlewaretoken')
+        # Hint: You might also want to capture the 'booking_hour' we set up in the HTML!
+        # booking_hour = request.POST.get('booking_hour')
         
+        description = request.POST.get('description')
+        
+        # 2. Capture Address Data safely using .get(key, '').strip() to remove extra spaces
+        house_no = request.POST.get('house_no', '').strip()
+        building = request.POST.get('building_name', '').strip()
+        street = request.POST.get('street', '').strip()
+        city = request.POST.get('city', '').strip()
+        state = request.POST.get('state', '').strip()
+        pincode = request.POST.get('pincode', '').strip()
+        landmark = request.POST.get('landmark', '').strip()
 
-        # 2. Capture Address Data into temporary variables
-        street = request.POST.get('street')
-        city = request.POST.get('city')
-        state = request.POST.get('state')
-        pincode = request.POST.get('pincode')
-        landmark = request.POST.get('landmark')
-
-
-
+        # --- ADDRESS MERGE LOGIC ---
+        # Put the parts in a list, but only if they actually contain text
+        address_parts = []
+        if house_no:
+            address_parts.append(house_no)
+        if building:
+            address_parts.append(building)
+        if street:
+            address_parts.append(street)
+            
+        # Join them together with a comma and a space
+        # Result example: "Flat 402, Prestige Heights, 12th Main Road"
+        merged_street = ", ".join(address_parts)
+        # ---------------------------
 
         # Basic Validation
-        if not all([booking_date, street, city, pincode]):
+        if not all([booking_date, merged_street, city, pincode]):
             messages.error(request, "Please fill in all required fields marked with *")
             return redirect(request.path)
 
@@ -52,12 +66,13 @@ def bookings_view(request, product, service):
                     description=description,
                     phone=phone,
                     booking_date=booking_date
+                    # booking_hour=booking_hour # Uncomment if you added this to your model
                 )
 
                 # Save Linked Address Table
                 BookingAddress.objects.create(
                     booking=new_booking,
-                    street=street,
+                    street=merged_street,  # <-- Pass the newly merged string here
                     landmark=landmark,
                     city=city,
                     state=state,
@@ -70,15 +85,16 @@ def bookings_view(request, product, service):
         except Exception as e:
             print(f"Booking Error: {e}")
             messages.error(request, "An error occurred while saving your booking. Please try again.")
+            
+    # Assuming these context variables are defined earlier in your actual view
     context = {
         'type': type,
         'company': company,
         'model': model,
         'purposes': purposes
     }
-    # If GET request, render the form (you may need to pass initial data here)
+    
     return render(request, 'Bookings/bookings.html', context)
-
 @login_required
 def booking_success(request, booking_id):
     booking = Booking.objects.select_related().get(id=booking_id)
