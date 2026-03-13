@@ -227,48 +227,57 @@
 </div>
 
 <script>
-  function detectMyAddress() {
+    async function detectMyAddress() {
     const btn = document.getElementById('locate-btn');
     const btnText = btn.querySelector('span');
-    
+    const streetInput = document.getElementsByName('street')[0];
+    const pincodeInput = document.getElementById('pincode');
+
     if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser.");
         return;
     }
 
-    btnText.innerText = "Detecting...";
+    btnText.innerText = "Locating...";
     btn.classList.add('animate-pulse');
+
+    // --- CRITICAL FOR ACCURACY ---
+    const geoOptions = {
+        enableHighAccuracy: true, // Forces phone to use satellite GPS hardware
+        timeout: 10000,           // Give it 10 seconds to get a precise lock
+        maximumAge: 0             // Do not use old cached locations
+    };
 
     navigator.geolocation.getCurrentPosition(async (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
+        
+        // Log accuracy in meters (Useful for your own testing on Poco F7)
+        console.log(`Accuracy: ${position.coords.accuracy} meters`);
 
         try {
-            // Fetching from OpenStreetMap Nominatim
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
+            // We use zoom=18 to get house/street level detail instead of city level
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=18`);
             const data = await response.json();
-            
             const addr = data.address;
+
+            // BUILDING THE ACCURATE AREA STRING
+            // In Bangalore, people identify by Area/Suburb (e.g., HSR Layout, Indiranagar)
+            const mainRoad = addr.road || addr.pedestrian || "";
+            const area = addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || "";
             
-            // 1. Combine Street/Road/Suburb for the "Street Name / Area" field
-            const mainStreet = addr.road || addr.pedestrian || "";
-            const area = addr.suburb || addr.neighbourhood || addr.residential || "";
-            const combinedStreet = [mainStreet, area].filter(Boolean).join(', ');
+            const combinedStreet = [mainRoad, area].filter(Boolean).join(', ');
+            const pincode = (addr.postcode || "").replace(/\s/g, '');
 
-            // 2. Fetch Pincode
-            const pincode = addr.postcode || "";
-
-            // 3. Auto-fill the specific inputs in your form
             if (combinedStreet) {
-                document.getElementsByName('street')[0].value = combinedStreet;
+                streetInput.value = combinedStreet;
             }
             if (pincode) {
-                const pincodeInput = document.getElementById('pincode');
-                pincodeInput.value = pincode.replace(/\s/g, ''); // Clean any spaces
-                // Trigger the invalid check if you have CSS peers listening
+                pincodeInput.value = pincode;
                 pincodeInput.dispatchEvent(new Event('input')); 
             }
 
+            // SUCCESS UI
             btnText.innerText = "Area Detected!";
             btn.classList.remove('animate-pulse');
             btn.classList.replace('text-blue-400', 'text-green-400');
@@ -277,11 +286,17 @@
         } catch (error) {
             console.error("Geocoding error:", error);
             btnText.innerText = "Search Error";
+            btn.classList.remove('animate-pulse');
         }
     }, (error) => {
-        btnText.innerText = "Access Denied";
-        alert("Please enable location access to auto-fill the area.");
-    });
+        btn.classList.remove('animate-pulse');
+        if (error.code === 1) {
+            btnText.innerText = "Access Denied";
+            alert("Please enable location access in browser settings.");
+        } else {
+            btnText.innerText = "GPS Timeout";
+        }
+    }, geoOptions); // PASSING THE HIGH ACCURACY OPTIONS HERE
 }
 </script>
                 <div class="glass-card p-8 rounded-[2rem]">
