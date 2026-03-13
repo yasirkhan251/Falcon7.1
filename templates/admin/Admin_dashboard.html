@@ -197,6 +197,7 @@
 
 <form id="delete-form" method="POST" style="display:none;">{% csrf_token %}</form>
 
+
 <script>
     // --- MODAL LOGIC ---
     function showDetails(name, contact, model, purpose, status, date, address) {
@@ -216,7 +217,7 @@
             </div>
              <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">CONTACT</small>
-                <p style="font-weight:600; margin-top:4px;">${contact}</p>
+                <p style="font-weight:600; margin-top:4px;">   <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">${contact} <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">&#x1F4F1</a></a>             </p>
             </div>
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">SUBMISSION DATE</small>
@@ -225,7 +226,7 @@
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">ADDRESS</small>
                 <p style="font-weight:500; font-size:0.95rem; margin-top:4px; line-height:1.4;">
-                    ${address !== "No address provided" ? `<a href="${mapsUrl}" target="_blank" class="map-link"><i class="fas fa-map-marker-alt"></i> ${address}</a>` : address}
+                    ${address !== "No address provided" ? `${address} - <a href="${mapsUrl}"  target="_blank" class="map-link"><i class="fas fa-map-marker-alt"></i>📍🗺️</a>` : address}
                 </p>
             </div>
             <div>
