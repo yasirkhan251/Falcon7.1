@@ -33,8 +33,8 @@
     .client-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-gradient); display: grid; place-items: center; font-size: 0.7rem; color: white; font-weight: bold; }
     .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
     
-    .map-link { color: var(--accent-primary); text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; }
-    .map-link:hover { text-decoration: underline; opacity: 0.8; }
+    .map-link { color: var(--accent-primary); text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+    .map-link:hover { text-decoration: underline; color: var(--orange-glow); }
 
     /* Modal Glow for Clarity */
     .modal-box { 
@@ -104,7 +104,7 @@
                         <td>{{ booking.model }} - {{ booking.purpose }}</td>
                         <td>{{ booking.created_at|date:"M d, Y" }}</td>
                         <td>
-                           <span class="status-badge" 
+                            <span class="status-badge" 
       style="{% if booking.status == 'completed' %}
                 color: #22c55e; background: rgba(34, 197, 94, 0.1);
              {% elif booking.status == 'in_progress' %}
@@ -121,7 +121,7 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: 8px;">
-                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}')">
+                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}', '{{ booking.address.coordination|default:''|escapejs }}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <a href="{% url 'edit_booking' booking.id %}" class="action-btn" style="color: #3b82f6;"><i class="fas fa-edit"></i></a>
@@ -171,7 +171,7 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: 8px;">
-                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}')">
+                                <button class="action-btn" onclick="showDetails('{{ booking.user.name|escapejs }}', '{{ booking.user.username|escapejs }}', '{{ booking.model|escapejs }}', '{{ booking.purpose|escapejs }}', '{{ booking.status|escapejs }}', '{{ booking.created_at|date:'M d, Y' }}', '{% if booking.address %}{{ booking.address.house_no|escapejs }}, {{ booking.address.building_name|escapejs }}, {{ booking.address.street|escapejs }}, {{ booking.address.city|escapejs }} - {{ booking.address.pincode|escapejs }}{% else %}No address provided{% endif %}', '{{ booking.address.coordination|default:''|escapejs }}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <a href="{% url 'edit_booking' booking.id %}" class="action-btn" style="color: #3b82f6;"><i class="fas fa-edit"></i></a>
@@ -197,13 +197,23 @@
 
 <form id="delete-form" method="POST" style="display:none;">{% csrf_token %}</form>
 
-
 <script>
-    // --- MODAL LOGIC ---
-    function showDetails(name, contact, model, purpose, status, date, address) {
+    // --- UPDATED MODAL LOGIC WITH COORDINATES ---
+    function showDetails(name, contact, model, purpose, status, date, address, coords) {
         const modal = document.getElementById('detailsModal');
         const content = document.getElementById('modalContent');
-        const mapsUrl = address !== "No address provided" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "#";
+        
+        // Build the Maps URL securely based on GPS coordinates if available
+        let mapLinkHtml = '';
+        if (coords && coords.trim() !== '') {
+            // Drop a pin exactly at the captured GPS coordinates
+            const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(coords)}`;
+            mapLinkHtml = `<br><a href="${mapsUrl}" target="_blank" class="map-link"><i class="fas fa-map-marker-alt"></i> Open Precise Location in Maps</a>`;
+        } else if (address !== "No address provided") {
+            // Fallback to text search if they booked before coordinates were added
+            const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+            mapLinkHtml = `<br><a href="${mapsUrl}" target="_blank" class="map-link"><i class="fas fa-search-location"></i> Search Address in Maps</a>`;
+        }
 
         content.innerHTML = `
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
@@ -217,7 +227,7 @@
             </div>
              <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">CONTACT</small>
-                <p style="font-weight:600; margin-top:4px;">   <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">${contact} <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">&#x1F4F1</a></a>             </p>
+                <p style="font-weight:600; margin-top:4px;">   <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">${contact} <a style="color: azure; text-decoration: none;" href="tel:+91${contact}">📱</a></a>             </p>
             </div>
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">SUBMISSION DATE</small>
@@ -226,7 +236,7 @@
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <small style="color:var(--text-muted); letter-spacing:1px;">ADDRESS</small>
                 <p style="font-weight:500; font-size:0.95rem; margin-top:4px; line-height:1.4;">
-                    ${address !== "No address provided" ? `${address} - <a href="${mapsUrl}"  target="_blank" class="map-link"><i class="fas fa-map-marker-alt"></i>📍🗺️</a>` : address}
+                    ${address} ${mapLinkHtml}
                 </p>
             </div>
             <div>

@@ -56,7 +56,7 @@ class BookingAddress(models.Model):
     
     # New Fields from your Form
     house_no = models.CharField(max_length=100)
-    building_name = models.CharField(max_length=100)
+    coordination = models.CharField(max_length=100,blank=True, null=True)
     
     street = models.CharField(max_length=255)
     landmark = models.CharField(max_length=100, blank=True, null=True)

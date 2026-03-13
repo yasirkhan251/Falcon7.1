@@ -90,7 +90,7 @@
                     </p>
                     <p class="text-xs text-gray-300">{{ message }}</p>
                 </div>
-                <button onclick="this.parentElement.remove()" class="ml-4 text-gray-500 hover:text-white transition-colors">
+                <button type="button" onclick="this.parentElement.remove()" class="ml-4 text-gray-500 hover:text-white transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -214,7 +214,7 @@
                         </div>
                         
                         <div class="md:col-span-1 space-y-2">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Building / Apartment</label>
+                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Building / Apartment </label>
                             <input type="text" name="building_name"  
                                    class="input-field w-full rounded-2xl p-4" placeholder="e.g. Prestige Heights">
                         </div>
@@ -246,6 +246,8 @@
                                 ⚠ Sorry, we currently only provide service in Bangalore.
                             </p>
                         </div>
+                        
+                        <input type="hidden" id="coordination" name="coordination">
                     </div>
                 </div>
 
@@ -313,7 +315,7 @@
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBoh1aPMlNdOuY7OsFw3w7OCWACoMSE13Q&libraries=places"></script>
 
 <script>
-// Time Slots Logic
+// --- Time Slots Logic ---
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('booking_date');
     const container = document.getElementById('time-slots-container');
@@ -365,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     dateInput.addEventListener('change', updateTimePills);
     updateTimePills();
 
-    // Toasts Logic
+    // Toasts Auto-Fade Logic
     const toasts = document.querySelectorAll('.toast-card');
     toasts.forEach(toast => {
         setTimeout(() => {
@@ -375,22 +377,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Map Logic
+// --- Google Map Logic ---
 let map, geocoder;
 const darkStyle = [{"elementType":"geometry","stylers":[{"color":"#1a1a1a"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#333333"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"}]}];
 
 function openMapPicker() {
     const modal = document.getElementById('map-modal');
     modal.classList.remove('hidden');
-    modal.classList.add('flex'); // Add Flex so it centers children
+    modal.classList.add('flex');
     document.body.style.overflow = 'hidden'; 
 
+    // Initial Bangalore view
     initMap(12.9716, 77.5946); 
 
+    // Try to fetch location immediately upon opening
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
             const center = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
             map.setCenter(center);
+            map.setZoom(19);
         }, null, { enableHighAccuracy: true });
     }
 }
@@ -422,7 +427,7 @@ function initMap(lat, lng) {
     };
 }
 
-// NEW GEOLOCATION FUNCTION
+// GPS Crosshair Button Logic
 function goToMyLocation() {
     const btn = document.getElementById('gps-btn');
     const icon = btn.querySelector('svg');
@@ -437,7 +442,7 @@ function goToMyLocation() {
             map.setZoom(19); 
             icon.classList.remove('animate-spin', 'text-orange-500');
         }, (err) => {
-            alert("Unable to fetch GPS. Please ensure Location Services are enabled.");
+            alert("Unable to fetch GPS. Please ensure Location Services are enabled in your browser.");
             icon.classList.remove('animate-spin', 'text-orange-500');
         }, { enableHighAccuracy: true });
     } else {
@@ -446,6 +451,7 @@ function goToMyLocation() {
     }
 }
 
+// Live Address Preview
 function updatePreview(lat, lng) {
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
         if (status === "OK") {
@@ -454,6 +460,7 @@ function updatePreview(lat, lng) {
     });
 }
 
+// Final Save to Form
 async function fetchAndFill(lat, lng) {
     const apiKey = "AIzaSyBoh1aPMlNdOuY7OsFw3w7OCWACoMSE13Q";
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&extra_computations=ADDRESS_DESCRIPTORS&key=${apiKey}`;
@@ -462,19 +469,27 @@ async function fetchAndFill(lat, lng) {
         const data = await response.json();
         if (data.status === "OK") {
             const res = data.results[0];
+            
+            // Fill Street Text
             document.getElementsByName('street')[0].value = res.formatted_address;
             
+            // FILL HIDDEN COORDINATES (LAT, LNG)
+            document.getElementById('coordination').value = `${lat}, ${lng}`;
+            
+            // Extract Pincode
             let pin = "";
             res.address_components.forEach(c => {
                 if (c.types.includes("postal_code")) pin = c.long_name;
             });
             document.getElementById('pincode').value = (pin || "").replace(/\s/g, '');
             
+            // Extract Landmark
             if (data.address_descriptor && data.address_descriptor.landmarks.length > 0) {
                 const l = data.address_descriptor.landmarks[0];
                 const landmark = `${l.spatial_relationship.replace(/_/g, ' ').toLowerCase()} ${l.display_name.text}`;
                 document.getElementsByName('landmark')[0].value = landmark;
             }
+            
             document.getElementById('pincode').dispatchEvent(new Event('input'));
             closeMap();
         }
