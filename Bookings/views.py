@@ -26,13 +26,14 @@ def bookings_view(request, product, service):
         
         # 2. Capture Address Data safely using .get(key, '').strip() to remove extra spaces
         house_no = request.POST.get('house_no', '').strip()
+        
         building = request.POST.get('building_name', '').strip()
         street = request.POST.get('street', '').strip()
         city = request.POST.get('city', '').strip()
         state = request.POST.get('state', '').strip()
         pincode = request.POST.get('pincode', '').strip()
         landmark = request.POST.get('landmark', '').strip()
-
+        print(house_no, building, street, city, state, pincode, landmark)
         # --- ADDRESS MERGE LOGIC ---
         # Put the parts in a list, but only if they actually contain text
         address_parts = []
@@ -117,48 +118,72 @@ def booking_menu(request, product, service):
     category_path = product_obj.category.get_path_list()
 
     if request.method == 'POST':
-        # 2. Extract Timing Data (New logic)
+        # 2. Extract Timing Data
         date_val = request.POST.get('booking_date')
         hour_val = request.POST.get('booking_hour') # Coming as 10, 14, 20 etc. from JS
         
+        # 3. Extract Address Data Safely (.strip() removes extra spaces)
+        house_no = request.POST.get('house_no', '').strip()
+        building = request.POST.get('building_name', '').strip()
+        street = request.POST.get('street', '').strip()
+        city = request.POST.get('city', '').strip()
+        pincode = request.POST.get('pincode', '').strip()
+        landmark = request.POST.get('landmark', '').strip()
+
+        # --- ADDRESS MERGE LOGIC ---
+        # Add parts to a list only if they are not empty
+        address_parts = []
+        if house_no:
+            address_parts.append(house_no)
+        if building:
+            address_parts.append(building)
+        if street:
+            address_parts.append(street)
+            
+        # Join them together beautifully: "Flat 402, Prestige Heights, 12th Main"
+        merged_street = ", ".join(address_parts)
+        # ---------------------------
+
+        # Prevent crash if user forgets to click a time slot
+        if not hour_val:
+            messages.error(request, "Please select an appointment time slot.")
+            return redirect(request.path)
+
         try:
             # Combine into Python datetime
             combined_dt = datetime.strptime(f"{date_val} {hour_val}:00", '%Y-%m-%d %H:%M')
             
-            # 3. Use Atomic Transaction to save both models together
+            # 4. Use Atomic Transaction to save both models together
             with transaction.atomic():
                 # Create the Main Booking
-                # We pull service_type from the root of your category_path
                 booking = Booking.objects.create(
                     user=request.user,
                     service_type=category_path[0].name, # e.g., "Mobile"
-                    service_name=product_obj.brand,     # e.g., "Samsung"
-                    model=product_obj.model_name,       # e.g., "S24 Ultra"
-                    purpose=service,                    # e.g., "repair"
+                    service_name=product_obj.brand,     # e.g., "OPPO"
+                    model=product_obj.model_name,       # e.g., "A6 Pro 5G"
+                    purpose=service,                    # e.g., "Speaker"
                     description=request.POST.get('description'),
                     phone=request.POST.get('phone'),
                     booking_date=combined_dt
                 )
 
-                # Create the Booking Address
+                # Create the Booking Address using the merged string
                 BookingAddress.objects.create(
                     booking=booking,
-                    street=request.POST.get('street'),
-                    landmark=request.POST.get('landmark'),
-                    city=request.POST.get('city'),
-                    pincode=request.POST.get('pincode'),
-                    # We can store house/building in the street field 
-                    # or update your model to include them separately
+                    street=merged_street,               # <-- Pushing the merged address here!
+                    landmark=landmark,
+                    city=city,
+                    pincode=pincode,
                     state="Karnataka" 
                 )
 
             messages.success(request, f"Booking confirmed! Order ID: {booking.order_id}")
-            return redirect('booking_success', token=booking.token) # Replace with your actual URL name
+            return redirect('booking_success', token=booking.token) 
 
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
 
-    # Context for the GET request (Your existing logic)
+    # Context for the GET request
     context = {
         'sku_str': product,
         'service': service,
@@ -167,8 +192,6 @@ def booking_menu(request, product, service):
     }
 
     return render(request, 'Bookings/bookings.html', context)
-
-
 def booking_success(request, token):
     # Fetch the booking using the unique token
     # Use select_related to get the address in the same query
