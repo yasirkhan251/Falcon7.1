@@ -212,76 +212,93 @@
 </button>
 
 
-<script>function detectMyAddress() {
+<script>async function detectMyAddress() {
     const btn = document.getElementById('locate-btn');
     const btnText = btn.querySelector('span');
-    const helpGuide = document.getElementById('location-help'); // From previous step
+    const helpGuide = document.getElementById('location-help');
     
+    // Select the actual inputs from your form
+    const streetInput = document.getElementsByName('street')[0];
+    const pincodeInput = document.getElementById('pincode');
+
     if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser.");
         return;
     }
 
-    // Check if we are on a secure connection
-    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        alert("Mobile browsers require HTTPS to use Location services.");
-        return;
-    }
-
-    btnText.innerText = "Detecting...";
+    // UI Feedback
+    btnText.innerText = "Locating...";
     btn.classList.add('animate-pulse');
+    helpGuide.classList.add('hidden');
 
-    // Mobile-Specific Options
-    const options = {
-        enableHighAccuracy: true, // Forces phone to use GPS instead of just IP
-        timeout: 10000,           // Give mobile GPS 10 seconds to respond
-        maximumAge: 0             // Do not use a cached location
+    // MOBILE-FIRST OPTIONS: These are critical for accuracy on Poco F7
+    const gpsOptions = {
+        enableHighAccuracy: true, // Forces phone to use hardware GPS (Satellite)
+        timeout: 15000,           // Give it 15 seconds to get a precise lock
+        maximumAge: 0             // Do not use old cached location
     };
 
     navigator.geolocation.getCurrentPosition(async (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
+        const accuracy = position.coords.accuracy; // In meters
+
+        console.log(`Accuracy: ${accuracy} meters`);
 
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
+            // Nominatim API with zoom 18 for high precision
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=18`);
             const data = await response.json();
             const addr = data.address;
             
-            const mainStreet = addr.road || addr.pedestrian || "";
-            const area = addr.suburb || addr.neighbourhood || addr.residential || "";
-            const combinedStreet = [mainStreet, area].filter(Boolean).join(', ');
+            // Build the most accurate area string for Bangalore
+            // We prioritize 'suburb' and 'neighbourhood' for local area accuracy
+            const street = addr.road || addr.pedestrian || "";
+            const area = addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || "";
+            const combinedStreet = [street, area].filter(Boolean).join(', ');
+            
             const pincode = (addr.postcode || "").replace(/\s/g, '');
 
+            // Fill inputs
             if (combinedStreet) {
-                document.getElementsByName('street')[0].value = combinedStreet;
+                streetInput.value = combinedStreet;
             }
+            
             if (pincode) {
-                const pincodeInput = document.getElementById('pincode');
                 pincodeInput.value = pincode;
+                // Trigger Tailwind peer validation manually
                 pincodeInput.dispatchEvent(new Event('input')); 
             }
 
+            // Success UI
             btnText.innerText = "Area Detected!";
             btn.classList.remove('animate-pulse');
             btn.classList.replace('text-blue-400', 'text-green-400');
             btn.classList.replace('border-blue-500/30', 'border-green-500/30');
 
         } catch (error) {
-            btnText.innerText = "Search Error";
+            console.error("Fetch Error:", error);
+            btnText.innerText = "Try Manual Entry";
             btn.classList.remove('animate-pulse');
         }
     }, (error) => {
         btn.classList.remove('animate-pulse');
-        // Mobile Error Handling
-        if (error.code === 1) { // PERMISSION_DENIED
-            btnText.innerText = "Access Denied";
-            if(helpGuide) helpGuide.classList.remove('hidden');
-        } else if (error.code === 3) { // TIMEOUT
-            btnText.innerText = "Timeout (Try Again)";
-        } else {
-            btnText.innerText = "GPS Error";
+        
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                btnText.innerText = "Access Blocked";
+                helpGuide.classList.remove('hidden');
+                break;
+            case error.POSITION_UNAVAILABLE:
+                btnText.innerText = "GPS Unavailable";
+                break;
+            case error.TIMEOUT:
+                btnText.innerText = "Timeout (Retry)";
+                break;
+            default:
+                btnText.innerText = "Search Error";
         }
-    }, options);
+    }, gpsOptions);
 }</script>
                 <div class="glass-card p-8 rounded-[2rem]">
                     <div class="flex items-center mb-8">
