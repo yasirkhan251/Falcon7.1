@@ -57,14 +57,19 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #333;
         }
 
-        /* --- HEADERS --- */
-        .header { margin-bottom: 30px; text-align: center; }
+        /* --- HEADERS & PROGRESS --- */
+        .header { margin-bottom: 25px; text-align: center; }
         .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 5px; }
         .brand-gradient {
             background: linear-gradient(to right, var(--blue-glow), var(--orange-glow));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .header p { color: var(--text-muted); font-size: 0.95rem; }
+
+        .progress-container { margin-bottom: 25px; text-align: center; }
+        .progress-text { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
+        .progress-bar-bg { width: 100%; background: #222; height: 4px; border-radius: 2px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--blue-glow); width: 50%; transition: width 0.4s ease; }
 
         /* --- INPUTS --- */
         .input-group { margin-bottom: 20px; position: relative; }
@@ -104,6 +109,17 @@
             transition: 0.3s; margin-top: 10px; display: flex; justify-content: center; align-items: center;
         }
         .btn-primary:hover { transform: translateY(-2px); opacity: 0.95; }
+        
+        .btn-secondary {
+            width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #333;
+            background: #111; color: white; font-size: 1.1rem; font-weight: 600; cursor: pointer;
+            transition: 0.3s; margin-top: 10px;
+        }
+        .btn-secondary:hover { background: #222; }
+
+        .step-buttons { display: flex; gap: 15px; }
+        .step-buttons .btn-secondary { flex: 1; }
+        .step-buttons .btn-primary { flex: 2; }
 
         /* --- VISUAL SIDE --- */
         .visual-section {
@@ -118,12 +134,41 @@
 
         .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
         @media (max-width: 900px) {
             .visual-section { display: none; }
             .form-section { background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #050505 45%); min-height: 100vh; }
         }
+                    
+                    .forgot-password-box{
+    margin-top:20px;
+    padding:15px;
+    background:rgba(255, 129, 4, 0.08);
+    border:1px solid rgba(249,115,22,0.4);
+    border-radius:12px;
+    text-align:center;
+}
+
+.forgot-password-box span{
+    display:block;
+    color:#fbbf24;
+    font-weight:600;
+    margin-bottom:8px;
+}
+
+.forgot-password-box a{
+    color:#ffffff;
+    font-weight:700;
+    text-decoration:none;
+    transition:.3s;
+}
+
+.forgot-password-box a:hover{
+    color:#3b82f6;
+    text-decoration:underline;
+}
+               
     </style>
 </head>
 <body>
@@ -147,6 +192,7 @@
                 <button class="toggle-btn" id="signupBtn" onclick="switchTab('signup')">Sign Up</button>
             </div>
 
+            <!-- LOGIN FORM -->
             <div id="loginFormContainer" class="fade-in">
                 <div class="header">
                     <h1>Welcome Back</h1>
@@ -158,58 +204,96 @@
                     <input type="hidden" name="next" value="{{ next }}">
                     
                     <div class="input-group">
-                        <label>Phone Number</label>
-                        <input type="tel" name="phone" placeholder="9876543210" maxlength="10" 
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                        <label>Login Details</label>
+                        <input type="tel" name="userinput" placeholder="Enter Email ID or Phone Number" maxlength="50" 
+                                
+                               required>
+                               <!-- oninput="this.value = this.value.replace(/[^0-9]/g, '')" -->
                     </div>
 
                     <div class="input-group">
                         <label>Password</label>
                         <input type="password" name="password" placeholder="••••••••" required>
                     </div>
+                    
 
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
+
+
+               {% if count >= 3 %}
+<div class="forgot-password-box">
+    <span>🔒 Having trouble logging in?</span>
+    <a href="{% url 'forgot_password' %}">Reset your password</a>
+</div>
+{% endif %}
             </div>
 
+            <!-- SIGNUP FORM (2-Step) -->
             <div id="signupFormContainer" class="hidden fade-in">
                 <div class="header">
                     <h1>Create Account</h1>
                     <p>Join <span class="brand-gradient">Falcon Tech World</span></p>
                 </div>
 
-                <form id="signupForm" method="POST" action="{% url 'register' %}" onsubmit="return validateSignup(event)">
+                <!-- Progress Indicator -->
+                <div class="progress-container">
+                    <div class="progress-text" id="progressText">Step 1 of 2</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                    </div>
+                </div>
+
+                <form id="signupForm" method="POST" action="{% url 'register' %}" onsubmit="return validateFinalSubmit(event)">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ next }}">
 
-                    <div class="input-group">
-                        <label>Full Name</label>
-                        <input type="text" name="name" placeholder="John Doe" required>
+                    <!-- Step 1: Personal Details -->
+                    <div id="signupStep1" class="fade-in">
+                        <div class="input-group">
+                            <label>Full Name</label>
+                            <input type="text" id="signupName" name="name" placeholder="John Doe">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="signupEmail" name="email" placeholder="john@example.com">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="signupPhone" name="phone" placeholder="eg:9876543210" maxlength="10" 
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="goToStep2()">Next &rarr;</button>
                     </div>
 
-                    <div class="input-group">
-                        <label>Phone Number</label>
-                        <input type="tel" name="phone" placeholder="eg:9876543210" maxlength="10" 
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                    <!-- Step 2: Security -->
+                    <div id="signupStep2" class="hidden fade-in">
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="signupPass" name="password" placeholder="Min. 6 characters">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Confirm Password</label>
+                            <input type="password" id="signupConfirm" name="confirm_password" placeholder="Repeat password">
+                        </div>
+
+                        <div class="step-buttons">
+                            <button type="button" class="btn-secondary" onclick="goToStep1()">&larr; Back</button>
+                            <button type="submit" class="btn-primary">Create Account</button>
+                        </div>
                     </div>
 
-                    <div class="input-group">
-                        <label>Password</label>
-                        <input type="password" id="signupPass" name="password" placeholder="Min. 6 characters" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Confirm Password</label>
-                        <input type="password" id="signupConfirm" name="confirm_password" placeholder="Repeat password" required>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Create Account</button>
                 </form>
             </div>
 
         </div>
     </div>
 
+    <!-- VISUAL SIDE -->
     <div class="visual-section">
         <div class="blob blob-1"></div> 
         <div class="blob blob-2"></div> 
@@ -244,17 +328,15 @@
             messages.forEach(msg => {
                 const levelTag = msg.getAttribute('data-level');
                 const text = msg.getAttribute('data-text');
-                // Maps Django tags to CSS classes
                 let type = 'info';
                 if (levelTag.includes('error')) type = 'error';
                 if (levelTag.includes('success')) type = 'success';
-                
                 showToast(text, type);
             });
         }
     });
 
-    // --- UI Logic ---
+    // --- UI Tab Logic ---
     function switchTab(tab) {
         const loginContainer = document.getElementById('loginFormContainer');
         const signupContainer = document.getElementById('signupFormContainer');
@@ -271,11 +353,57 @@
             loginContainer.classList.add('hidden');
             signupBtn.classList.add('active');
             loginBtn.classList.remove('active');
+            // Reset to Step 1 just in case
+            goToStep1();
         }
     }
 
-    // --- Client Side Validation ---
-    function validateSignup(event) {
+    // --- Signup Flow Logic (Step 1 to Step 2) ---
+    function goToStep2() {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const phone = document.getElementById('signupPhone').value.trim();
+
+        // 1. Check for empty fields
+        if (!name || !email || !phone) {
+            showToast("Please fill in all personal details.", "error");
+            return;
+        }
+
+        // 2. Validate Email Format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast("Please enter a valid email address.", "error");
+            return;
+        }
+
+        // 3. Validate Phone Length
+        if (phone.length < 10) {
+            showToast("Phone number must be at least 10 digits.", "error");
+            return;
+        }
+
+        // Proceed to Step 2
+        document.getElementById('signupStep1').classList.add('hidden');
+        document.getElementById('signupStep2').classList.remove('hidden');
+        
+        // Update Progress UI
+        document.getElementById('progressText').innerText = "Step 2 of 2";
+        document.getElementById('progressBar').style.width = "100%";
+    }
+
+    function goToStep1() {
+        // Return to Step 1 without clearing inputs
+        document.getElementById('signupStep2').classList.add('hidden');
+        document.getElementById('signupStep1').classList.remove('hidden');
+        
+        // Update Progress UI
+        document.getElementById('progressText').innerText = "Step 1 of 2";
+        document.getElementById('progressBar').style.width = "50%";
+    }
+
+    // --- Final Form Submission Validation ---
+    function validateFinalSubmit(event) {
         const pass = document.getElementById('signupPass').value;
         const confirm = document.getElementById('signupConfirm').value;
 
@@ -290,6 +418,7 @@
             showToast("Passwords do not match!", "error");
             return false;
         }
+        
         return true;
     }
 </script>

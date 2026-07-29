@@ -16,7 +16,7 @@ class MyUser(AbstractUser):
     name = models.CharField(max_length=100)
     is_admin = models.BooleanField(default=False)
     # Remove unused fields
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True, unique=True)
     first_name = None
     last_name = None
 
