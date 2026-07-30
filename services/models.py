@@ -11,7 +11,7 @@ class ServiceCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     slug = models.SlugField(max_length=150, unique=True, blank=True)
-    category= models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)  
+    category= models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)  # My target to showcase
     image = models.ImageField(upload_to='service_categories/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     display_order = models.PositiveIntegerField(default=0)

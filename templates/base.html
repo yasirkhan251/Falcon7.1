@@ -152,6 +152,223 @@
         font-size: 0.75rem;
     }
 }
+
+/* Admin Dropdown */
+
+.ftw-admin-dropdown{
+    position:relative;
+}
+
+.ftw-admin-btn{
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-size:15px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:.3s;
+    font-weight:500;
+}
+
+.ftw-admin-btn:hover{
+    color:var(--accent-primary);
+}
+
+.ftw-admin-btn .fa-chevron-down{
+    font-size:11px;
+    transition:.35s;
+}
+
+.ftw-admin-dropdown:hover .fa-chevron-down{
+    transform:rotate(180deg);
+}
+
+.ftw-admin-menu{
+
+    position:absolute;
+    top:130%;
+    left:50%;
+    transform:translateX(-50%) translateY(15px);
+
+    min-width:220px;
+
+    background:rgba(15,15,15,.85);
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:16px;
+
+    padding:10px;
+
+    opacity:0;
+    visibility:hidden;
+
+    transition:
+    opacity .35s ease,
+    transform .35s ease,
+    visibility .35s;
+
+    box-shadow:
+    0 20px 50px rgba(0,0,0,.35);
+
+    z-index:9999;
+}
+
+.ftw-admin-dropdown:hover .ftw-admin-menu{
+
+    opacity:1;
+    visibility:visible;
+    transform:translateX(-50%) translateY(0);
+}
+
+.ftw-admin-menu a{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:12px 15px;
+
+    border-radius:12px;
+
+    color:var(--text-main);
+
+    text-decoration:none;
+
+    transition:.25s;
+}
+
+.ftw-admin-menu a:hover{
+
+    background:rgba(234, 232, 236, 0.12);
+
+    color:var(--accent-primary);
+
+    padding-left:22px;
+}
+
+.ftw-admin-menu a i{
+
+    width:18px;
+    text-align:center;
+}
+
+/* Mobile Admin */
+
+.ftw-mobile-admin{
+    width:100%;
+    max-width:320px;
+}
+
+.ftw-mobile-admin-btn{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:16px 20px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:rgba(255,255,255,.05);
+
+    color:var(--text-main);
+
+    cursor:pointer;
+
+    font-size:1.05rem;
+
+    font-weight:600;
+
+    transition:.3s;
+}
+
+.ftw-mobile-admin-btn span{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+.ftw-mobile-admin-btn:hover{
+
+    background:rgba(59,130,246,.15);
+}
+
+.ftw-mobile-admin-btn i:last-child{
+
+    transition:.35s;
+}
+
+.ftw-mobile-admin-menu{
+
+    max-height:0;
+
+    overflow:hidden;
+
+    transition:max-height .4s ease;
+
+    display:flex;
+
+    flex-direction:column;
+
+    margin-top:8px;
+
+    gap:6px;
+}
+
+.ftw-mobile-admin-menu a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:14px 18px;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.03);
+
+    text-decoration:none;
+
+    color:var(--text-main);
+
+    transition:.3s;
+}
+
+.ftw-mobile-admin-menu a:hover{
+
+    background:rgba(59,130,246,.15);
+
+    color:var(--accent-primary);
+
+    padding-left:28px;
+}
+
+.ftw-mobile-admin.open .ftw-mobile-admin-menu{
+
+    max-height:450px;
+}
+
+.ftw-mobile-admin.open
+.ftw-mobile-admin-btn
+.fa-chevron-down{
+
+    transform:rotate(180deg);
+}
   </style>
 </head>
 <body data-theme="dark">
@@ -167,10 +384,44 @@
       <a href="#">About</a>
       <a href="{% url 'index' %}#quote">Contact</a>
         {% if user.is_authenticated %}
-        <a href="{% url 'Admin_products'%}">Admin Products</a>
-        <a href="{% url 'sql_console'%}">Sql</a> 
-        <a href="{% url 'Admin_dashboard'%}">Admin Dashboard</a>
         <a href="{% url 'my_bookings'%}">Bookings</a>
+        {% if request.session.is_admin %}
+<div class="ftw-admin-dropdown">
+
+    <button class="ftw-admin-btn">
+        <i class="fas fa-shield-alt"></i>
+        Admin
+        <i class="fas fa-chevron-down"></i>
+    </button>
+
+    <div class="ftw-admin-menu">
+        <a href="{% url 'Admin_dashboard' %}">
+            <i class="fas fa-chart-line"></i>
+            Dashboard
+        </a>
+
+        <a href="{% url 'Admin_products' %}">
+            <i class="fas fa-box-open"></i>
+            Products
+        </a>
+        <a href="{% url 'Admin_Service' %}">
+            <i class="fas fa-box-open"></i>
+            Service
+        </a>
+
+        <a href="{% url 'sql_console' %}">
+            <i class="fas fa-database"></i>
+            SQL Console
+        </a>
+                <a href="/admin_dev">
+            <i class="fas fa-user-shield"></i>
+            Adv DevTools
+        </a>
+    </div>
+
+</div>
+{% endif %}
+
         <a href="{% url 'logout' %}"><button class="btn-auth">{{ user.name }}</button></a>
       {% else %}
         <a href="{% url 'auth' %}"><button class="btn-auth">Login</button></a>
@@ -201,6 +452,55 @@
                 {{ user.username|upper }}
             </button>
         </a>
+        {% if request.session.is_admin %}
+
+<div class="ftw-mobile-admin">
+
+    <button class="ftw-mobile-admin-btn" id="ftw-mobile-admin-btn">
+        <span>
+            <i class="fas fa-user-shield"></i>
+            Admin
+        </span>
+
+        <i class="fas fa-chevron-down" id="ftw-mobile-admin-arrow"></i>
+    </button>
+
+    <div class="ftw-mobile-admin-menu" id="ftw-mobile-admin-menu">
+
+        <a href="{% url 'Admin_dashboard' %}">
+            <i class="fas fa-chart-line"></i>
+            Dashboard
+        </a>
+
+        <a href="{% url 'Admin_products' %}">
+            <i class="fas fa-box-open"></i>
+            Products
+        </a>
+                <a href="{% url 'Admin_Service' %}">
+            <i class="fas fa-box-open"></i>
+            Service
+        </a>
+
+        <a href="{% url 'sql_console' %}">
+            <i class="fas fa-database"></i>
+            SQL Console
+        </a>
+
+        <a href="/admin_dev">
+            <i class="fas fa-laptop-code"></i>
+            Adv DevTools
+        </a>
+
+        <a href="/admin">
+            <i class="fas fa-user-cog"></i>
+            Django Admin
+        </a>
+
+    </div>
+
+</div>
+
+{% endif %}
     {% else %}
         <a href="{% url 'auth' %}" class="auth-wrapper">
             <button class="btn-auth">
@@ -249,6 +549,17 @@
         document.body.style.overflow = "auto";
       });
     });
+    const mobileAdmin = document.getElementById("ftw-mobile-admin-btn");
+
+if (mobileAdmin) {
+
+    mobileAdmin.addEventListener("click", function () {
+
+        this.parentElement.classList.toggle("open");
+
+    });
+
+}
   </script>
 </body>
 </html>

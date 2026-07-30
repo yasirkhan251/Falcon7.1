@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from .models import Category, Product
 from Bookings.models import Booking, BookingAddress
 from Accounts.models import MyUser
+from services.models import ServiceCategory
 import json
 from django.views.decorators.http import require_POST
 from django.db import connection, transaction
@@ -35,6 +36,36 @@ def move_item_to_folder(request):
     except Exception as e:
         print(f"Error moving item: {e}") # This prints the error to your terminal
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    
+    
+    
+def move_item_to_fold_service(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        target_folder_id = data.get('folder_id')
+        item_type = data.get('type')
+
+        target_folder = get_object_or_404(ServiceCategory, id=target_folder_id)
+
+        if item_type == 'product':
+            # Make sure 'Product' matches your model class name
+            product = get_object_or_404(Product, id=item_id)
+            product.category = target_folder
+            product.save()
+        
+        elif item_type == 'folder':
+            folder = get_object_or_404(Category, id=item_id)
+            if folder.id != target_folder.id:
+                folder.parent = target_folder
+                folder.save()
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        print(f"Error moving item: {e}") # This prints the error to your terminal
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
 
 def Admin_dashboard(request):
     bookings = Booking.objects.all().order_by('-created_at') # Newest first
@@ -72,7 +103,7 @@ def edit_booking(request, booking_id):
         # Example: Updating status
         booking.status = request.POST.get('status')
         booking.save()
-        return redirect('Admin_products')
+        return redirect('Admin_dashboard')
     
     return render(request, 'Admin/edit_booking.html', {'booking': booking})
 
@@ -81,7 +112,7 @@ def delete_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     if request.method == 'POST':
         booking.delete()
-    return redirect('Admin_products')
+    return redirect('Admin_dashboard')
 
 def Admin_products(request, category_id=None):
     if category_id:
@@ -99,6 +130,53 @@ def Admin_products(request, category_id=None):
         'sub_folders': sub_folders,
         'files': files
     })
+
+
+
+
+def Admin_Service(request, category_id=None):
+    categories = Category.objects.all()
+    if category_id:
+        current_folder = get_object_or_404(ServiceCategory, id=category_id)
+        # Fix: Ensure these match the related_names in your models.py
+        sub_folders = current_folder.children.all().order_by('display_order')
+        files = current_folder.products.all().order_by('display_order')
+    else:
+        current_folder = None
+        sub_folders = ServiceCategory.objects.all().order_by('display_order')
+        files = []
+        
+
+    return render(request, 'Admin/Admin_service.html', {
+        'current_folder': current_folder,
+        'sub_folders': sub_folders,
+        'files': files,
+        'all_categories': categories
+    })
+
+
+from django.contrib import messages
+def add_service(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        category_id = request.POST.get('category_id') 
+        image = request.FILES.get('image')
+
+        parent_category = Category.objects.filter(id=category_id).first() if category_id else None
+
+        ServiceCategory.objects.create(
+            name=name,
+            description=description,
+            category=parent_category, 
+            image=image
+        )
+        
+        # Add a success toast message!
+        messages.success(request, f"Service Category '{name}' created successfully!")
+
+        return redirect(request.META.get('HTTP_REFERER', 'Admin_service'))
+
 
 def add_folder(request):
     if request.method == "POST":
@@ -182,6 +260,16 @@ def update_display_order(request):
                 Category.objects.filter(id=item['id']).update(display_order=item['order'])
             else:
                 Product.objects.filter(id=item['id']).update(display_order=item['order'])
+        return JsonResponse({'status': 'success'})
+  
+  
+def update_display_order_service(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        for item in data.get('items', []):
+            if item['type'] == 'folder':
+                ServiceCategory.objects.filter(id=item['id']).update(display_order=item['order'])
+  
         return JsonResponse({'status': 'success'})
     
 

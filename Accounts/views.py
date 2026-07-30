@@ -42,9 +42,10 @@ def auth(request):
             
             if user is not None:
                 login(request, user)
-                
+                request.session['is_admin'] = False
                 # 3. Check for is_admin status
                 if user.is_admin:
+                    request.session['is_admin'] = True
                     # Render the specific admin template
                     return redirect('Admin_dashboard')
                 

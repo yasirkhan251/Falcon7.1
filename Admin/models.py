@@ -31,7 +31,9 @@ class Category(models.Model):
         ordering = ['display_order', 'name']
 
     def __str__(self):
-        return self.name
+        # Shows "Laptop / Alienware Series" instead of just "Alienware Series"
+        # If it has no parent, it will just show "Laptop"
+        return self.get_full_path()
 
     def get_full_path(self):
         """Returns the breadcrumb path as a string"""
