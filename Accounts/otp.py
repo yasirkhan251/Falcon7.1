@@ -32,26 +32,182 @@ def send_email(email, otp, name, phone):
     msg["From"] = sender_email
     msg["To"] = email
 
-    msg.set_content(f"""
-Hi {name},
+    msg.set_content("Please enable HTML to view this email.")
 
-Your One-Time Password (OTP) is:
+    msg.add_alternative(f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #000000 !important;
+            font-family: 'Outfit', Arial, Helvetica, sans-serif;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }}
 
-{otp}
+        /* Full width wrapper to force background color in Gmail */
+        .wrapper {{
+            width: 100%;
+            table-layout: fixed;
+            background-color: #000000;
+            padding-bottom: 40px;
+        }}
 
-You can login using:
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            border: 1px solid #222222;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+        }}
 
-Email : {email}
-Phone : {phone}
+        .header {{
+            background: #111111;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 2px solid #3b82f6;
+        }}
 
-This OTP is confidential.
+        .header h1 {{
+            margin: 0;
+            font-size: 26px;
+            color: #ffffff;
+        }}
 
-Please do not share it with anyone.
+        .content {{
+            padding: 35px;
+            color: #e2e8f0;
+        }}
 
-Regards,
-Authentication System
-""")
+        .content h2 {{
+            margin-top: 0;
+            color: #ffffff;
+        }}
 
+        .otp {{
+            background: #111111;
+            border: 2px dashed #3b82f6;
+            text-align: center;
+            font-size: 36px;
+            letter-spacing: 12px;
+            font-weight: bold;
+            color: #f97316;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 12px;
+        }}
+
+        .info {{
+            background: #111111;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #3b82f6;
+        }}
+
+        .info table {{
+            width: 100%;
+            color: #e2e8f0;
+        }}
+
+        .info td {{
+            padding: 8px 0;
+        }}
+        
+        .info td strong {{
+            color: #94a3b8;
+        }}
+
+        .warning {{
+            margin-top: 30px;
+            background: rgba(249, 115, 22, 0.1);
+            color: #fbd38d;
+            border-left: 4px solid #f97316;
+            padding: 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+        }}
+
+        .footer {{
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            padding: 20px;
+            background: #111111;
+            border-top: 1px solid #222222;
+        }}
+    </style>
+</head>
+
+<body style="background-color: #000000; margin: 0; padding: 0;">
+
+<!-- This wrapper table acts as the true "body" for email clients -->
+<table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #000000;">
+    <tr>
+        <td align="center" style="padding-top: 40px; padding-bottom: 40px;">
+            
+            <table class="container" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="max-width: 600px; text-align: left;">
+                <tr>
+                    <td>
+                        <div class="header">
+                            <h1>Authentication System</h1>
+                        </div>
+
+                        <div class="content">
+                            <h2>Hello, {name} 👋</h2>
+
+                            <p>
+                                We received a request to verify your account.
+                                Please use the One-Time Password (OTP) below to continue.
+                            </p>
+
+                            <div class="otp">
+                                {otp}
+                            </div>
+
+                            <div class="info">
+                                <table cellpadding="0" cellspacing="0" role="presentation">
+                                    <tr>
+                                        <td width="60"><strong>Email:</strong></td>
+                                        <td>{email}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Phone:</strong></td>
+                                        <td>{phone}</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="warning">
+                                <strong style="color: #f97316; font-size: 16px;">Security Notice</strong><br><br>
+
+                                • Never share your OTP with anyone.<br>
+                                • Our team will never ask for your OTP.<br>
+                                • If you didn't request this verification, you can safely ignore this email.
+                            </div>
+                        </div>
+
+                        <div class="footer">
+                            © 2026 Authentication System<br>
+                            This is an automated email. Please do not reply.
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
+""", subtype="html")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
 
         smtp.login(sender_email, app_password)
@@ -63,68 +219,6 @@ Authentication System
     
     
     
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.hashers import make_password
-# Import your User model if it's custom, or standard Django auth model
-
-# def verify_otp(request):
-#     if request.method == "POST":
-#         submitted_otp = request.POST.get("otp")
-#         new_password = request.POST.get("new_password")
-#         confirm_password = request.POST.get("confirm_password")
-
-#         # Get session data
-#         session_otp = request.session.get("otp")
-#         user_id = request.session.get("otp_user_id")
-#         email = request.session.get("otp_email")
-        
-#         # 1. Check if session expired
-#         if not session_otp or not user_id:
-#             messages.error(request, "Session expired. Please request a new OTP.")
-#             return redirect('forgot_password') # Change to your forgot password URL name
-
-#         # 2. Validate OTP
-#         if submitted_otp != session_otp:
-#             messages.error(request, "Invalid OTP. Please try again.")
-#             return render(request, 'Auth/otpverification.html', {'email': email})
-
-#         # 3. Validate Passwords
-#         if new_password != confirm_password:
-#             messages.error(request, "Passwords do not match.")
-#             return render(request, 'Auth/otpverification.html', {'email': email})
-            
-#         if len(new_password) < 6:
-#             messages.error(request, "Password must be at least 6 characters.")
-#             return render(request, 'Auth/otpverification.html', {'email': email})
-
-#         # 4. Update the Password
-#         try:
-#             # Assuming you have a way to fetch the user by ID
-#             # Replace 'YourUserModel' with your actual user model class
-#             user = YourUserModel.objects.get(id=user_id)
-            
-#             # If using standard Django auth: user.set_password(new_password)
-#             # If custom without set_password: user.password = make_password(new_password)
-#             user.set_password(new_password) 
-#             user.save()
-
-#             # 5. Clear Session Variables
-#             del request.session["otp"]
-#             del request.session["otp_user_id"]
-#             del request.session["otp_email"]
-#             del request.session["otp_phone"]
-
-#             messages.success(request, "Password updated successfully. You can now log in.")
-#             return redirect('login') # Change to your login URL name
-
-#         except YourUserModel.DoesNotExist:
-#             messages.error(request, "User not found.")
-#             return redirect('forgot_password')
-
-#     # If accessed via GET directly, redirect to forgot password
-#     return redirect('forgot_password')
-
 
 
 # file end 
