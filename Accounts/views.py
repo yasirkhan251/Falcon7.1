@@ -130,21 +130,113 @@ def forget_password(request):
 
         # Send the SAME OTP to email
         send_otp(
-            
+              
             userinlist.name,
             userinlist.email,
             userinlist.phone,
             otp
         )
-
+        
         messages.success(request, "OTP has been sent to your registered email.")
-
+        return render(request, 'Auth/otp.html', {
+            'email': userinlist.email,
+            'phone': userinlist.phone
+        })
     return render(request, "Auth/forgot_password.html")
 
 
 
+def verify_otp(request):
+    if request.method == "POST":
+        submitted_otp = request.POST.get("otp")
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password") 
+        # session variable calling 
+        session_otp = request.session.get("otp")
+        user_id = request.session.get("otp_user_id")
+        email = request.session.get("otp_email")
+        phone = request.session.get("otp_phone")
+
+        if not session_otp or not user_id:
+            messages.error(request, "Session expired. Please request a new OTP.")
+            return redirect('forgot_password') # Change to your forgot password URL name
+
+        # 2. Validate OTP
+        if submitted_otp != session_otp:
+            messages.error(request, "Invalid OTP. Please try again.")
+            return render(request, 'Auth/otp.html', {'email': email})
+
+        # 3. Validate Passwords
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'Auth/otp.html', {'email': email})
+            
+        if len(new_password) < 6:
+            messages.error(request, "Password must be at least 6 characters.")
+            return render(request, 'Auth/otp.html', {'email': email})
+
+        # 4. Update the Password
+        try:
+            # Assuming you have a way to fetch the user by ID
+            # Replace 'YourUserModel' with your actual user model class
+            user = MyUser.objects.get(id=user_id)
+            
+            # If using standard Django auth: user.set_password(new_password)
+            # If custom without set_password: user.password = make_password(new_password)
+            user.set_password(new_password) 
+            user.save()
+
+            # 5. Clear Session Variables
+            del request.session["otp"]
+            del request.session["otp_user_id"]
+            del request.session["otp_email"]
+            del request.session["otp_phone"]
+
+            messages.success(request, "Password updated successfully. You can now log in.")
+            return redirect('auth') # Change to your login URL name
+
+        except MyUser.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect('forgot_password')
+
+    # If accessed via GET directly, redirect to forgot password
+    return redirect('forgot_password')
 
 
+
+
+def resend_otp(request):
+    if request.method == "POST":
+        user_id = request.session.get("otp_user_id")
+        
+        if not user_id:
+            messages.error(request, "Session expired. Please enter your email/phone again.")
+            return redirect('forgot_password')
+
+        try:
+            user = MyUser.objects.get(id=user_id)
+            
+            # Generate new OTP
+            new_otp = generate_otp()
+            
+            # Update session and reset expiry
+            request.session["otp"] = str(new_otp)
+            request.session.set_expiry(300) # Reset to 5 mins
+            
+            # Send the email using your existing function
+            send_otp(user.name, user.email, user.phone, new_otp)
+            
+            messages.success(request, "A new OTP has been sent to your email.")
+            return render(request, 'Auth/otpverification.html', {
+                'email': user.email,
+                'phone': user.phone
+            })
+            
+        except MyUser.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect('forgot_password')
+            
+    return redirect('forgot_password')
 
 def logout_view(request):
     logout(request)

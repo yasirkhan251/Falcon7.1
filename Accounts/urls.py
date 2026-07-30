@@ -6,4 +6,5 @@ urlpatterns = [
     path('register/', register, name='register'),
     path('logout/', logout_view, name='logout'),
     path('forgot_password/', forget_password, name='forgot_password'),
+    path('verify-otp/', verify_otp, name='verify_otp'),
 ]
