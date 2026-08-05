@@ -70,7 +70,7 @@
     /* Modals & Buttons */
     .admin-btn { padding: 10px 18px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
     .btn-folder { background: var(--folder-blue); color: white; }
-    .btn-product { background: var(--accent); color: white; }
+    .btn-service { background: var(--accent); color: white; }
     .btn-back { background: #333; color: white; border: 1px solid #444; text-decoration: none; }
     
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; }
@@ -96,6 +96,8 @@
     <div class="container">
         <div class="breadcrumb-nav">
             <a href="{% url 'Admin_products' %}">Root</a>
+
+            
             {% if current_folder %}
                 {% for ancestor in current_folder.get_ancestors %}
                     / <a href="{% url 'Admin_products_folder' ancestor.id %}">{{ ancestor.name }}</a>
@@ -111,9 +113,9 @@
                 {% endif %}
                 <h2 style="margin: 0;">Admin Explorer</h2>
             </div>
-        <div style="display: flex; gap: 12px;">
-        <button onclick="toggleModal('productModal')" class="admin-btn btn-product">+ Add Service</button>
-        </div>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="toggleModal('serviceModal')" class="admin-btn btn-service">+ Add Service</button>
+            </div>
         </div>
 
         <div id="drag-container" class="dynamic-grid">
@@ -121,31 +123,38 @@
             {% for folder in sub_folders %}
             <div class="item-card" data-id="{{ folder.id }}" data-type="folder">
                 <div class="card-actions">
+                    
                     <button class="dots-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown(event, 'drop-f-{{ folder.id }}')">⋮</button>
                     <div id="drop-f-{{ folder.id }}" class="dropdown-menu">
-                        <button data-url="{% url 'edit_category' folder.id %}" onclick="openEditCategory(this, '{{ folder.name|escapejs }}', '{{ folder.description|escapejs }}')">Edit</button>
+                        <button data-url="{% url 'edit_category' folder.id %}" onclick="openEditCategory(this, '{{ folder.name|escapejs }}', '{{ folder.description|escapejs }}', '{{ folder.category|escapejs }}')">Edit</button>
                         <a href="{% url 'delete_category' folder.id %}" class="delete-opt" onclick="return confirm('Delete category?')">Delete</a>
                     </div>
                 </div>
-                <a href="{% url 'Admin_products_folder' folder.id %}" style="text-decoration: none; color: inherit;">
+                <div style="text-decoration: none; color: inherit;">
                     <div class="image-wrapper">{% if folder.image %}<img src="{{ folder.image.url }}">{% else %}📁{% endif %}</div>
                     <h3 style="font-size: 1rem;">{{ folder.name }}</h3>
-                </a>
+                </div>
             </div>
             {% endfor %}
 
-            {% for file in files %}
-            <div class="item-card" data-id="{{ file.id }}" data-type="product" style="border-bottom: 3px solid var(--accent);">
+            <!-- Service rendering loop -->
+            {% for service in services %}
+            <div class="item-card" data-id="{{ service.id }}" data-type="service" style="border-bottom: 3px solid var(--accent);">
                 <div class="card-actions">
-                    <button class="dots-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown(event, 'drop-p-{{ file.id }}')">⋮</button>
-                    <div id="drop-p-{{ file.id }}" class="dropdown-menu">
-                        <button data-url="{% url 'edit_product' file.id %}" onclick="openEditProduct(this, '{{ file.brand|escapejs }}', '{{ file.model_name|escapejs }}', '{{ file.price }}', '{{ file.stock }}')">Edit</button>
-                        <a href="{% url 'delete_product' file.id %}" class="delete-opt" onclick="return confirm('Delete product?')">Delete</a>
+                    <button class="dots-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown(event, 'drop-s-{{ service.id }}')">⋮</button>
+                    <div id="drop-s-{{ service.id }}" class="dropdown-menu">
+                        <!-- ADDED BACK: The Edit Service Button -->
+                        <button data-url="{% url 'edit_category' folder.id %}" onclick="openEditCategory(this, '{{ folder.name|escapejs }}', '{{ folder.description|escapejs }}', '{{ folder.parent_id|default:'' }}')">Edit</button>
+                        <a href="{% url 'delete_service' service.id %}" class="delete-opt" onclick="return confirm('Delete service?')">Delete</a>
                     </div>
                 </div>
-                <div class="image-wrapper">{% if file.image %}<img src="{{ file.image.url }}">{% else %}📦{% endif %}</div>
-                <h3 style="font-size: 1rem;">{{ file.model_name }}</h3>
-                <p style="margin: 4px 0; color: var(--text-dim); font-size: 0.85rem;">{{ file.brand }}</p>
+                <div class="image-wrapper">
+                    {% if service.image %}<img src="{{ service.image.url }}">{% else %}🛠️{% endif %}
+                </div>
+                <h3 style="font-size: 1rem;">{{ service.name }}</h3>
+                {% if service.description %}
+                <p style="margin: 4px 0; color: var(--text-dim); font-size: 0.85rem;">{{ service.description|truncatechars:30 }}</p>
+                {% endif %}
             </div>
             {% endfor %}
             
@@ -154,48 +163,53 @@
 </div>
 
 <!-- Modals -->
-<div id="folderModal" class="modal-overlay">
-    <div class="modal-content">
-        <form action="{% url 'add_folder' %}" method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="parent_id" value="{{ current_folder.id|default:'' }}">
-            <h3>New Category</h3>
-            <input type="text" name="name" placeholder="Category Name" required>
-            <div class="drop-zone"><span class="dz-text">Drop or Paste Icon</span><input type="file" name="image" accept="image/*" class="dz-file-input"><div class="dz-preview"></div></div>
-            <button type="submit" class="admin-btn btn-folder" style="width:100%">Create</button>
-            <button type="button" onclick="toggleModal('folderModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
-        </form>
-    </div>
-</div>
+
 
 <div id="editCategoryModal" class="modal-overlay">
     <div class="modal-content">
         <form id="editCategoryForm" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <h3>Edit Category</h3>
-            <input type="text" name="name" id="edit_cat_name" required>
-            <textarea name="description" id="edit_cat_desc" rows="3"></textarea>
-            <div class="drop-zone"><span class="dz-text">Update Image</span><input type="file" name="image" accept="image/*" class="dz-file-input"><div class="dz-preview"></div></div>
-            <button type="submit" class="admin-btn btn-folder" style="width:100%">Update</button>
+            <h3 style="margin-bottom: 15px;">Edit Category</h3>
+            
+            <input type="text" name="name" id="edit_cat_name" placeholder="Category Name" required 
+                   style="width: 100%; padding: 12px; margin: 10px 0; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; outline: none;">
+            
+            <textarea name="description" id="edit_cat_desc" placeholder="Description (Optional)" rows="3" 
+                      style="width: 100%; padding: 12px; margin: 10px 0; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; outline: none; resize: vertical;"></textarea>
+            
+            <!-- FIXED: Moved the ID to the select tag and updated the name to parent_id -->
+<select name="category_id" id="edit_cat_parent" class="input-field" style="width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 10px; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; outline: none; cursor: pointer;">
+                <option value="">--------- (No Parent Category) ---------</option>
+                {% for cat in all_categories %}
+                    <option value="{{ cat.id }}">
+                        {{ cat.get_full_path }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <div class="drop-zone">
+                <span class="dz-text">Update Image</span>
+                <input type="file" name="image" accept="image/*" class="dz-file-input">
+                <div class="dz-preview"></div>
+            </div>
+            
+            <button type="submit" class="admin-btn btn-folder" style="width:100%; margin-top: 15px;">Update Category</button>
             <button type="button" onclick="toggleModal('editCategoryModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
         </form>
     </div>
 </div>
-
-<div id="productModal" class="modal-overlay">
+<!-- Add Service Modal -->
+<div id="serviceModal" class="modal-overlay">
     <div class="modal-content">
         <form action="{% url 'add_service' %}" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             
-            <h3 style="margin-bottom: 15px;">New Service Category</h3>
+            <h3 style="margin-bottom: 15px;">New Service</h3>
             
-            <!-- 1. Name Input (Matches request.POST.get('name')) -->
             <input type="text" name="name" placeholder="Service Name (e.g., iPhone Screen Repair)" required>
             
-            <!-- 2. Description Input (Matches request.POST.get('description')) -->
             <textarea name="description" placeholder="Description (Optional)" rows="2" style="width: 100%; padding: 12px; margin: 10px 0; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; resize: vertical;"></textarea>
             
-            <!-- 3. Category Dropdown (Matches request.POST.get('category_id')) -->
             <select name="category_id" class="input-field" style="width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 10px; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; outline: none; cursor: pointer;">
                 <option value="">--------- (No Parent Category) ---------</option>
                 {% for cat in all_categories %}
@@ -205,35 +219,20 @@
                 {% endfor %}
             </select>
             
-            <!-- 4. Image Drop Zone (Matches request.FILES.get('image')) -->
             <div class="drop-zone">
                 <span class="dz-text">Drop or Paste Image</span>
                 <input type="file" name="image" accept="image/*" class="dz-file-input">
                 <div class="dz-preview"></div>
             </div>
             
-            <button type="submit" class="admin-btn btn-product" style="width:100%; margin-top: 15px;">Save</button>
-            <button type="button" onclick="toggleModal('productModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
+            <button type="submit" class="admin-btn btn-service" style="width:100%; margin-top: 15px;">Save</button>
+            <button type="button" onclick="toggleModal('serviceModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
         </form>
     </div>
 </div>
 
-<div id="editProductModal" class="modal-overlay">
-    <div class="modal-content">
-        <form id="editProductForm" method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <h3>Edit Product</h3>
-            <input type="text" name="brand" id="edit_p_brand" readonly style="opacity:0.7;">
-            <input type="text" name="model_name" id="edit_p_model" required>
-            <!-- Fixed Hidden Inputs -->
-            <input type="hidden" name="price" id="edit_p_price">
-            <input type="hidden" name="stock" id="edit_p_stock">
-            <div class="drop-zone"><span class="dz-text">Update Image</span><input type="file" name="image" accept="image/*" class="dz-file-input"><div class="dz-preview"></div></div>
-            <button type="submit" class="admin-btn btn-product" style="width:100%">Update</button>
-            <button type="button" onclick="toggleModal('editProductModal')" class="admin-btn" style="width:100%; margin-top:5px; background:#444;">Cancel</button>
-        </form>
-    </div>
-</div>
+<!-- Edit Service Modal -->
+
 
 <div id="save-toast">Order Saved!</div>
 
@@ -257,19 +256,23 @@
     }
 
     // Dynamic Edit Forms
-    function openEditCategory(btn, name, desc) {
-        document.getElementById('editCategoryForm').action = btn.dataset.url;
-        document.getElementById('edit_cat_name').value = name;
-        document.getElementById('edit_cat_desc').value = desc;
-        toggleModal('editCategoryModal');
-    }
-    function openEditProduct(btn, brand, model, price, stock) {
-        document.getElementById('editProductForm').action = btn.dataset.url;
-        document.getElementById('edit_p_brand').value = brand;
-        document.getElementById('edit_p_model').value = model;
-        document.getElementById('edit_p_price').value = price;
-        document.getElementById('edit_p_stock').value = stock;
-        toggleModal('editProductModal');
+function openEditCategory(btn, name, desc, parentId) {
+    document.getElementById('editCategoryForm').action = btn.dataset.url;
+    document.getElementById('edit_cat_name').value = name;
+    document.getElementById('edit_cat_desc').value = desc;
+    
+    // This locks the dropdown to the currently saved Parent ID
+    document.getElementById('edit_cat_parent').value = parentId || "";
+    
+    toggleModal('editCategoryModal');
+}
+    
+    function openEditService(btn, name, desc, categoryId, category) {
+        document.getElementById('editServiceForm').action = btn.dataset.url;
+        document.getElementById('edit_srv_name').value = name;
+        document.getElementById('edit_srv_desc').value = desc;
+        document.getElementById('edit_srv_cat').value = categoryId;
+        toggleModal('editServiceModal');
     }
 
     // --- 2. DRAG TO REORDER LOGIC ---
@@ -279,11 +282,9 @@
         delay: 50,
         delayOnTouchOnly: true,
 
-        // Triggers when dragging finishes
         onEnd: function () {
             const items = [];
             
-            // Loop through all cards in their new visual order and capture their ID & Type
             document.querySelectorAll('.item-card').forEach((el, index) => {
                 items.push({ 
                     id: el.dataset.id, 
@@ -292,7 +293,6 @@
                 });
             });
 
-            // Send the newly sorted array to Django
             fetch("{% url 'update_display_order_service' %}", {
                 method: 'POST',
                 headers: { 
@@ -303,7 +303,6 @@
             })
             .then(res => {
                 if(res.ok) {
-                    // Show success toast
                     const toast = document.getElementById('save-toast');
                     toast.style.display = 'block';
                     setTimeout(() => { toast.style.display = 'none'; }, 2500);
@@ -328,7 +327,6 @@
         input.addEventListener('change', () => { if (input.files.length) handlePreview(zone, input.files[0]); });
     });
 
-    // Global Paste Listener for Images
     window.addEventListener('paste', (e) => {
         const activeModal = document.querySelector('.modal-overlay[style*="display: block"]');
         if (!activeModal) return;
